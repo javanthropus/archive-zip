@@ -1,0 +1,8 @@
+# Vim swap files
+.*.sw?
+
+# The gem package directory
+pkg/*
+
+# The documentation directory
+doc/*
