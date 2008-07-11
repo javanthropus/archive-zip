@@ -145,6 +145,8 @@ module Archive # :nodoc:
         # in use to be replaced as is required when trying to update the archive
         # "in place".
         File.rename(tmp_archive_path, @archive_path) if @archive_out.nil?
+      elsif ! @archive_in.nil? then
+        @archive_in.close
       end
 
       closed = true
