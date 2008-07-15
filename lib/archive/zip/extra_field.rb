@@ -18,6 +18,6 @@ module Archive; class Zip
 end; end
 
 # Load the standard extra field classes.
-require 'archive/zip/extrafield/extendedtimestamp'
-require 'archive/zip/extrafield/raw'
-require 'archive/zip/extrafield/unix'
+require 'archive/zip/extra_field/extended_timestamp'
+require 'archive/zip/extra_field/raw'
+require 'archive/zip/extra_field/unix'

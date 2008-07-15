@@ -1,7 +1,7 @@
 require 'archive/zip/codec/store'
 require 'archive/zip/error'
-require 'archive/zip/extrafield'
-require 'archive/zip/datadescriptor'
+require 'archive/zip/extra_field'
+require 'archive/zip/data_descriptor'
 
 module Archive; class Zip
   # The Archive::Zip::Entry mixin provides classes with methods implementing
