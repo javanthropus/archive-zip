@@ -12,8 +12,8 @@ module Archive; class Zip
   # overridden to provide sensible information for the new entry type.
   #
   # A class using this mixin must provide 2 methods: _extract_ and
-  # _dump_compressed_data_.  _extract_ should be a public method with the
-  # following signature:
+  # _dump_file_data_.  _extract_ should be a public method with the following
+  # signature:
   #
   #   def extract(options = {})
   #     ...
@@ -26,10 +26,9 @@ module Archive; class Zip
   # Archive::Zip::Entry::Directory#extract for examples of the options currently
   # supported.
   #
-  # _dump_compressed_data_ should be a private method with the following
-  # signature:
+  # _dump_file_data_ should be a private method with the following signature:
   #
-  #   def dump_compressed_data(io)
+  #   def dump_file_data(io)
   #     ...
   #   end
   #
@@ -73,6 +72,10 @@ module Archive; class Zip
       :extra_fields,
       :compressed_data
     )
+
+    # When this flag is set in the general purpose flags, it indicates that the
+    # entry's file data is encrypted using the original (weak) algorithm.
+    FLAG_ENCRYPTED               = 0b0001
 
     # When this flag is set in the general purpose flags, it indicates that the
     # read data descriptor record for a local file record is located after the
@@ -525,7 +528,7 @@ module Archive; class Zip
       # Get a compressor, write all the file data to it, and get a data
       # descriptor from it.
       codec.compressor(io) do |c|
-        dump_compressed_data(c)
+        dump_file_data(c)
         c.close(false)
         @data_descriptor = c.data_descriptor
       end
@@ -693,8 +696,8 @@ module Archive; class Zip; module Entry
 
     private
 
-    # Directory entries do not have compressed data to write, so do nothing.
-    def dump_compressed_data(io)
+    # Directory entries do not have file data to write, so do nothing.
+    def dump_file_data(io)
     end
   end
 end; end; end
@@ -782,7 +785,7 @@ module Archive; class Zip; module Entry
     private
 
     # Write the link target to _io_ as the file data for the entry.
-    def dump_compressed_data(io)
+    def dump_file_data(io)
       io.write(@link_target)
     end
   end
@@ -959,7 +962,7 @@ module Archive; class Zip; module Entry
     private
 
     # Write the file data to _io_.
-    def dump_compressed_data(io)
+    def dump_file_data(io)
       while buffer = file_data.read(4096) do io.write(buffer) end
 
       # Attempt to ensure that the file data will still be in a readable state
