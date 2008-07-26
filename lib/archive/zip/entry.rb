@@ -467,13 +467,6 @@ module Archive; class Zip
       false
     end
 
-    # Override this method in descendent classes.  It should cause the entry to
-    # be extracted from the archive.  This implementation does nothing.
-    # _options_ should be a hash used for specifying extraction options, the
-    # keys of which should not collide with keys used by Archive::Zip#extract.
-    def extract(options = {})
-    end
-
     # Adds _extra_field_ as an extra field specification to this entry.  If
     # _extra_field_ is an instance of
     # Archive::Zip::Entry::ExtraField::ExtendedTimestamp, the values of that
