@@ -431,7 +431,7 @@ module Archive; class Zip
     attr_accessor :uid
     # The group ID of the owner of this entry.
     attr_accessor :gid
-    # The the file mode/permission bits for this entry.
+    # The file mode/permission bits for this entry.
     attr_accessor :mode
     # The comment associated with this entry.
     attr_accessor :comment
