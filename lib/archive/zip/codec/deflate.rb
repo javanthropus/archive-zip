@@ -1,6 +1,6 @@
 require 'archive/support/zlib'
 require 'archive/zip/codec'
-require 'archive/zip/datadescriptor'
+require 'archive/zip/data_descriptor'
 
 module Archive; class Zip; module Codec
   # Archive::Zip::Codec::Deflate is a handle for the deflate-inflate codec as

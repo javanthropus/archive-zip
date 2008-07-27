@@ -1,6 +1,6 @@
 require 'archive/support/io-like'
 require 'archive/zip/codec'
-require 'archive/zip/datadescriptor'
+require 'archive/zip/data_descriptor'
 
 module Archive; class Zip; module Codec
   # Archive::Zip::Codec::Store is a handle for the store-unstore (no
