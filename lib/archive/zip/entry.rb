@@ -249,6 +249,8 @@ module Archive; class Zip
         entry.expected_data_descriptor = data_descriptor
       end
 
+      # Record the codec.
+      entry.codec = codec
       # Set some entry metadata.
       entry.mtime = cfr.mtime
       # Only set mode bits for the entry if the external file attributes are
