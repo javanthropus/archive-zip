@@ -151,12 +151,10 @@ module Archive; class Zip; module Codec
       # uncompressed_size and crc32 attributes as a side effect.
       def unbuffered_read(length)
         buffer = @io.read(length)
-        if buffer.nil? then
-          raise EOFError, 'end of file reached'
-        else
-          @uncompressed_size += buffer.length
-          @crc32 = Zlib.crc32(buffer, @crc32)
-        end
+        raise EOFError, 'end of file reached' if buffer.nil?
+
+        @uncompressed_size += buffer.length
+        @crc32 = Zlib.crc32(buffer, @crc32)
         buffer
       end
 
