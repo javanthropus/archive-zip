@@ -3,19 +3,19 @@ require 'archive/zip/codec'
 require 'archive/zip/data_descriptor'
 
 module Archive; class Zip; module Codec
-  # Archive::Zip::Codec::Deflate is a handle for the deflate-inflate codec as
-  # defined in Zlib which provides convenient interfaces for writing and reading
-  # deflated streams.
+  # Archive::Zip::Codec::Deflate is a handle for the deflate-inflate codec
+  # as defined in Zlib which provides convenient interfaces for writing and
+  # reading deflated streams.
   class Deflate
-    # Archive::Zip::Codec::Deflate::Deflate extends Zlib::ZWriter in order to
+    # Archive::Zip::Codec::Deflate::Compress extends Zlib::ZWriter in order to
     # specify the standard Zlib options required by ZIP archives and to provide
-    # a close method which can optionally close the delegate IO-like object.  In
-    # addition a convenience method is provided for generating DataDescriptor
+    # a close method which can optionally close the delegate IO-like object.
+    # In addition a convenience method is provided for generating DataDescriptor
     # objects based on the data which is passed through this object.
     #
     # Instances of this class should only be accessed via the
     # Archive::Zip::Codec::Deflate#compressor method.
-    class Deflate < Zlib::ZWriter
+    class Compress < Zlib::ZWriter
       # Creates a new instance of this class with the given arguments using #new
       # and then passes the instance to the given block.  The #close method is
       # guaranteed to be called after the block completes.
@@ -61,15 +61,15 @@ module Archive; class Zip; module Codec
       end
     end
 
-    # Archive::Zip::Codec::Deflate::Inflate extends Zlib::ZReader in order to
+    # Archive::Zip::Codec::Deflate::Decompress extends Zlib::ZReader in order to
     # specify the standard Zlib options required by ZIP archives and to provide
-    # a close method which can optionally close the delegate IO-like object.  In
-    # addition a convenience method is provided for generating DataDescriptor
+    # a close method which can optionally close the delegate IO-like object.
+    # In addition a convenience method is provided for generating DataDescriptor
     # objects based on the data which is passed through this object.
     #
     # Instances of this class should only be accessed via the
     # Archive::Zip::Codec::Deflate#decompressor method.
-    class Inflate < Zlib::ZReader
+    class Decompress < Zlib::ZReader
       # Creates a new instance of this class with the given arguments using #new
       # and then passes the instance to the given block.  The #close method is
       # guaranteed to be called after the block completes.
@@ -157,21 +157,22 @@ module Archive; class Zip; module Codec
     # This method signature is part of the interface contract expected by
     # Archive::Zip::Entry for codec objects.
     #
-    # A convenience method for creating an Archive::Zip::Codec::Deflate::Deflate
-    # object using that class' open method.  The compression level for the open
-    # method is pulled from the value of the _general_purpose_flags_ argument of
-    # new.
+    # A convenience method for creating an
+    # Archive::Zip::Codec::Deflate::Compress object using that class' open
+    # method.  The compression level for the open method is pulled from the
+    # value of the _general_purpose_flags_ argument of new.
     def compressor(io, &b)
-      Deflate.open(io, @zlib_compression_level, &b)
+      Compress.open(io, @zlib_compression_level, &b)
     end
 
     # This method signature is part of the interface contract expected by
     # Archive::Zip::Entry for codec objects.
     #
-    # A convenience method for creating an Archive::Zip::Codec::Deflate::Inflate
-    # object using that class' open method.
+    # A convenience method for creating an
+    # Archive::Zip::Codec::Deflate::Decompress object using that class' open
+    # method.
     def decompressor(io, &b)
-      Inflate.open(io, &b)
+      Decompress.open(io, &b)
     end
 
     # This method signature is part of the interface contract expected by

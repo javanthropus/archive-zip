@@ -6,14 +6,17 @@ module Archive; class Zip; module Codec
   # Archive::Zip::Codec::Store is a handle for the store-unstore (no
   # compression) codec.
   class Store
-    # Archive::Zip::Codec::Store::Store is simply a writable, IO-like wrapper
+    # Archive::Zip::Codec::Store::Compress is simply a writable, IO-like wrapper
     # around a writable, IO-like object which provides a CRC32 checksum of the
     # data written through it as well as the count of the total amount of data.
     # A #close method is also provided which can optionally close the delegate
     # object.  In addition a convenience method is provided for generating
     # DataDescriptor objects based on the data which is passed through this
     # object.
-    class Store
+    #
+    # Instances of this class should only be accessed via the
+    # Archive::Zip::Codec::Store#compressor method.
+    class Compress
       include IO::Like
 
       # Creates a new instance of this class with the given argument using #new
@@ -82,14 +85,17 @@ module Archive; class Zip; module Codec
       end
     end
 
-    # Archive::Zip::Codec::Store::Unstore is a readable, IO-like wrapper around
-    # a readable, IO-like object which provides a CRC32 checksum of the data
-    # read through it as well as the count of the total amount of data.  A
+    # Archive::Zip::Codec::Store::Decompress is a readable, IO-like wrapper
+    # around a readable, IO-like object which provides a CRC32 checksum of the
+    # data read through it as well as the count of the total amount of data.  A
     # #close method is also provided which can optionally close the delegate
     # object.  In addition a convenience method is provided for generating
     # DataDescriptor objects based on the data which is passed through this
     # object.
-    class Unstore
+    #
+    # Instances of this class should only be accessed via the
+    # Archive::Zip::Codec::Store#decompressor method.
+    class Decompress
       include IO::Like
 
       # Creates a new instance of this class with the given arguments using #new
@@ -194,19 +200,20 @@ module Archive; class Zip; module Codec
     # This method signature is part of the interface contract expected by
     # Archive::Zip::Entry for codec objects.
     #
-    # A convenience method for creating an Archive::Zip::Codec::Store::Store
+    # A convenience method for creating an Archive::Zip::Codec::Store::Compress
     # object using that class' open method.
     def compressor(io, &b)
-      Store.open(io, &b)
+      Compress.open(io, &b)
     end
 
     # This method signature is part of the interface contract expected by
     # Archive::Zip::Entry for codec objects.
     #
-    # A convenience method for creating an Archive::Zip::Codec::Store::Unstore
-    # object using that class' open method.
+    # A convenience method for creating an
+    # Archive::Zip::Codec::Store::Decompress object using that class' open
+    # method.
     def decompressor(io, &b)
-      Unstore.open(io, &b)
+      Decompress.open(io, &b)
     end
 
     # This method signature is part of the interface contract expected by
