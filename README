@@ -107,6 +107,7 @@ Now extract those archives:
 9.  Unknown entry extension types are preserved during archive processing.
 10. The Deflate and Store compression codecs are supported out of the box.
 11. More compression codecs can be added on the fly.
+12. Traditional (weak) encryption is supported out of the box.
 
 
 == Known Bugs/Limitations
@@ -119,7 +120,7 @@ Now extract those archives:
 4.  Reading archives from non-seekable IO, such as pipes and sockets, is not
     supported.
 5.  MSDOS permission attributes are not supported.
-6.  Encryption is not supported.
+6.  Strong encryption is not supported.
 7.  Zip64 is not supported.
 8.  Digital signatures are not supported.
 

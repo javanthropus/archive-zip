@@ -1,7 +1,10 @@
+require 'archive/zip/codec/deflate'
+require 'archive/zip/codec/null_encryption'
 require 'archive/zip/codec/store'
+require 'archive/zip/codec/traditional_encryption'
+require 'archive/zip/data_descriptor'
 require 'archive/zip/error'
 require 'archive/zip/extra_field'
-require 'archive/zip/data_descriptor'
 
 module Archive; class Zip
   # The Archive::Zip::Entry mixin provides classes with methods implementing
@@ -111,9 +114,18 @@ module Archive; class Zip
     # <b>:follow_symlinks</b>::
     #   When set to +true+ (the default), symlinks are treated as the files or
     #   directories to which they point.
-    # <b>:codec</b>::
-    #   When unset, the default codec for file entries is used; otherwise, a
-    #   file entry which is created will use the codec set with this option.
+    # <b>:compression_codec</b>::
+    #   Specifies a proc, lambda, or class.  If a proc or lambda is used, it
+    #   must take a single argument containing a zip entry and return a
+    #   compression codec class to be instantiated and used with the entry.
+    #   Otherwise, a compression codec class must be specified directly.  When
+    #   unset, the default compression codec for each entry type is used.
+    # <b>:encryption_codec</b>::
+    #   Specifies a proc, lambda, or class.  If a proc or lambda is used, it
+    #   must take a single argument containing a zip entry and return an
+    #   encryption codec class to be instantiated and used with the entry.
+    #   Otherwise, an encryption codec class must be specified directly.  When
+    #   unset, the default encryption codec for each entry type is used.
     #
     # Raises Archive::Zip::EntryError if processing the given file path results
     # in a file not found error.
@@ -144,19 +156,37 @@ module Archive; class Zip
         zip_path += '/'
       end
 
+      # Instantiate the entry.
       if stat.symlink? then
         entry = Entry::Symlink.new(zip_path)
         entry.link_target = ::File.readlink(file_path)
       elsif stat.file? then
         entry = Entry::File.new(zip_path)
         entry.file_path = file_path
-        entry.codec = options[:codec] unless options[:codec].nil?
       elsif stat.directory? then
         entry = Entry::Directory.new(zip_path)
       else
         raise Zip::EntryError,
           "unsupported file type `#{stat.ftype}' for file `#{file_path}'"
       end
+
+      # Set the compression and encryption codecs.
+      unless options[:compression_codec].nil? then
+        if options[:compression_codec].kind_of?(Proc) then
+          entry.compression_codec = options[:compression_codec][entry].new
+        else
+          entry.compression_codec = options[:compression_codec].new
+        end
+      end
+      unless options[:encryption_codec].nil? then
+        if options[:encryption_codec].kind_of?(Proc) then
+          entry.encryption_codec = options[:encryption_codec][entry].new
+        else
+          entry.encryption_codec = options[:encryption_codec].new
+        end
+      end
+
+      # Set the entry's metadata.
       entry.uid = stat.uid
       entry.gid = stat.gid
       entry.mtime = stat.mtime
@@ -203,54 +233,54 @@ module Archive; class Zip
       # same.
       compare_file_records(lfr, cfr)
 
-      # Raise an error if the codec is not supported.
-      unless Codec.supported?(cfr.compression_method) then
-        raise Zip::EntryError,
-          "`#{cfr.zip_path}': unsupported compression method"
+      begin
+        # Load the correct compression codec.
+        compression_codec = Codec.create_compression_codec(
+          cfr.compression_method,
+          cfr.general_purpose_flags
+        )
+      rescue Zip::Error => e
+        raise Zip::EntryError, "`#{cfr.zip_path}': #{e.message}"
       end
 
-      # Load the correct codec.
-      codec = Codec.create(cfr.compression_method, cfr.general_purpose_flags)
+      begin
+        # Load the correct encryption codec.
+        encryption_codec = Codec.create_encryption_codec(
+          cfr.general_purpose_flags
+        )
+      rescue Zip::Error => e
+        raise Zip::EntryError, "`#{cfr.zip_path}': #{e.message}"
+      end
+
       # Set up a data descriptor with expected values for later comparison.
-      data_descriptor = DataDescriptor.new(
+      expected_data_descriptor = DataDescriptor.new(
         cfr.crc32,
         cfr.compressed_size,
         cfr.uncompressed_size
       )
+
       # Create the entry.
       expanded_path = expand_path(cfr.zip_path)
+      io_window = IOWindow.new(io, io.pos, cfr.compressed_size)
       if cfr.zip_path[-1..-1] == '/' then
         # This is a directory entry.
-        begin
-          data_descriptor.verify(DataDescriptor.new(0, 0, 0))
-        rescue => e
-          raise Zip::EntryError, "`#{cfr.zip_path}': #{e.message}"
-        end
-        entry = Entry::Directory.new(expanded_path)
+        entry = Entry::Directory.new(expanded_path, io_window)
       elsif (cfr.external_file_attributes >> 16) & 0770000 == 0120000 then
         # This is a symlink entry.
-        entry = Entry::Symlink.new(expanded_path)
-        decompressor = codec.decompressor(
-          IOWindow.new(io, io.pos, cfr.compressed_size)
-        )
-        entry.link_target = decompressor.read
-        begin
-          data_descriptor.verify(decompressor.data_descriptor)
-        rescue => e
-          raise Zip::EntryError, "`#{cfr.zip_path}': #{e.message}"
-        end
-        decompressor.close
+        entry = Entry::Symlink.new(expanded_path, io_window)
       else
         # Anything else is a file entry.
-        entry = Entry::File.new(expanded_path)
-        entry.file_data = codec.decompressor(
-          IOWindow.new(io, io.pos, cfr.compressed_size)
-        )
-        entry.expected_data_descriptor = data_descriptor
+        entry = Entry::File.new(expanded_path, io_window)
       end
 
-      # Record the codec.
-      entry.codec = codec
+      # Set the expected data descriptor so that extraction can be verified.
+      entry.expected_data_descriptor = expected_data_descriptor
+      # Record the raw file data for the entry.
+      entry.raw_data = IOWindow.new(io, io.pos, cfr.compressed_size)
+      # Record the compression codec.
+      entry.compression_codec = compression_codec
+      # Record the encryption codec.
+      entry.encryption_codec = encryption_codec
       # Set some entry metadata.
       entry.mtime = cfr.mtime
       # Only set mode bits for the entry if the external file attributes are
@@ -410,8 +440,11 @@ module Archive; class Zip
     public
 
     # Creates a new, uninitialized Entry instance using the Store compression
-    # method.  The zip path is initialized to _zip_path_.
-    def initialize(zip_path)
+    # method.  The zip path is initialized to _zip_path_.  _raw_data_, if
+    # specified, must be a readable, IO-like object containing possibly
+    # compressed/encrypted file data for the entry.  It is intended to be used
+    # primarily by the parse class method.
+    def initialize(zip_path, raw_data = nil)
       self.zip_path = zip_path
       self.mtime = Time.now
       self.atime = @mtime
@@ -419,7 +452,11 @@ module Archive; class Zip
       self.gid = nil
       self.mode = 0777
       self.comment = ''
-      self.codec = Zip::Codec::Store.new
+      self.expected_data_descriptor = nil
+      self.compression_codec = Zip::Codec::Store.new
+      self.encryption_codec = Zip::Codec::NullEncryption.new
+      self.password = nil
+      @raw_data = raw_data
       @extra_fields = []
     end
 
@@ -437,8 +474,20 @@ module Archive; class Zip
     attr_accessor :mode
     # The comment associated with this entry.
     attr_accessor :comment
+    # An Archive::Zip::Entry::DataDescriptor instance which should contain the
+    # expected CRC32 checksum, compressed size, and uncompressed size for the
+    # file data.  When not +nil+, this is used by #extract to confirm that the
+    # data extraction was successful.
+    attr_accessor :expected_data_descriptor
     # The selected compression codec.
-    attr_accessor :codec
+    attr_accessor :compression_codec
+    # The selected encryption codec.
+    attr_accessor :encryption_codec
+    # The password used with the encryption codec to encrypt or decrypt the file
+    # data for an entry.
+    attr_accessor :password
+    # The raw, possibly compressed and/or encrypted file data for an entry.
+    attr_accessor :raw_data
 
     # Sets the path in the archive for this entry to _zip_path_ after passing it
     # through Archive::Zip::Entry.expand_path and ensuring that the result is
@@ -505,17 +554,37 @@ module Archive; class Zip
       @local_file_record_position = local_file_record_position
       bytes_written = 0
 
-      general_purpose_flags = codec.general_purpose_flags
-      # Flag that the data descriptor record will follow the compressed file
-      # data of this entry unless the IO object can be access randomly.
-      general_purpose_flags |= 0b1000 unless io.seekable?
+      general_purpose_flags  = compression_codec.general_purpose_flags
+      general_purpose_flags |= encryption_codec.general_purpose_flags
+
+      if ! io.seekable? ||
+         encryption_codec.class == Codec::TraditionalEncryption then
+        # Flag that the data descriptor record will follow the compressed file
+        # data of this entry.
+        #
+        # HACK:
+        # According to the ZIP specification, this should only be done if the IO
+        # object cannot be accessed randomly, but InfoZIP *always* sets this
+        # flag when using traditional encryption even though it will also write
+        # the data descriptor in the usual place if possible.  Failure to
+        # emulate InfoZIP in this behavior will prevent InfoZIP compatibility
+        # with traditionally encrypted entries.
+        general_purpose_flags |= FLAG_DATA_DESCRIPTOR_FOLLOWS
+      end
+
+      # Select the minimum ZIP specification version needed to extract this
+      # entry.
+      version_needed_to_extract = compression_codec.version_needed_to_extract
+      if encryption_codec.version_needed_to_extract > version_needed_to_extract then
+        version_needed_to_extract = encryption_codec.version_needed_to_extract
+      end
 
       bytes_written += io.write(LFH_SIGNATURE)
       bytes_written += io.write(
         [
-          codec.version_needed_to_extract,
+          version_needed_to_extract,
           general_purpose_flags,
-          codec.compression_method,
+          compression_codec.compression_method,
           mtime.to_dos_time.to_i,
           0,
           0,
@@ -527,21 +596,52 @@ module Archive; class Zip
       bytes_written += io.write(zip_path)
       bytes_written += io.write(extra_field_data)
 
-      # Get a compressor, write all the file data to it, and get a data
-      # descriptor from it.
-      codec.compressor(io) do |c|
-        dump_file_data(c)
-        c.close(false)
-        @data_descriptor = c.data_descriptor
+      if encryption_codec.class == Codec::TraditionalEncryption then
+        # HACK:
+        # Traditional encryption requires that the last 2 bytes of the header it
+        # uses are the 2 low order bytes of the last modified file time in DOS
+        # format.  This is different than stated in the ZIP specification and
+        # rather comes from the InfoZIP implementation.
+        encryption_codec.mtime = mtime
+      end
+
+      # Pipeline a compressor into an encryptor, write all the file data to the
+      # compressor, and get a data descriptor from it.
+      encryption_codec.encryptor(io, password) do |e|
+        compression_codec.compressor(e) do |c|
+          dump_file_data(c)
+          c.close(false)
+          @data_descriptor = DataDescriptor.new(
+            c.data_descriptor.crc32,
+            c.data_descriptor.compressed_size + encryption_codec.header_size,
+            c.data_descriptor.uncompressed_size
+          )
+        end
+        e.close(false)
       end
 
       bytes_written += @data_descriptor.compressed_size
       if io.seekable? then
+        # Update the data descriptor located before the compressed data for the
+        # entry.
         saved_position = io.pos
         io.pos = @local_file_record_position + 14
         @data_descriptor.dump(io)
         io.pos = saved_position
-      else
+      end
+
+      if ! io.seekable? ||
+         encryption_codec.class == Codec::TraditionalEncryption then
+        # Write the data descriptor after the compressed file data for the
+        # entry.
+        #
+        # HACK:
+        # According to the ZIP specification, this should only be done if the IO
+        # object cannot be accessed randomly, but InfoZIP *always* does this
+        # when using traditional encryption even though it will also write the
+        # data descriptor in the usual place if possible.  Failure to emulate
+        # InfoZIP in this behavior will prevent InfoZIP compatibility with
+        # traditionally encrypted entries.
         bytes_written += io.write(DD_SIGNATURE)
         bytes_written += @data_descriptor.dump(io)
       end
@@ -557,18 +657,38 @@ module Archive; class Zip
     def dump_central_file_record(io)
       bytes_written = 0
 
-      general_purpose_flags = codec.general_purpose_flags
-      # Flag that the data descriptor record will follow the compressed file
-      # data of this entry unless the IO object can be access randomly.
-      general_purpose_flags |= FLAG_DATA_DESCRIPTOR_FOLLOWS unless io.seekable?
+      general_purpose_flags  = compression_codec.general_purpose_flags
+      general_purpose_flags |= encryption_codec.general_purpose_flags
+
+      if ! io.seekable? ||
+         encryption_codec.class == Codec::TraditionalEncryption then
+        # Flag that the data descriptor record will follow the compressed file
+        # data of this entry.
+        #
+        # HACK:
+        # According to the ZIP specification, this should only be done if the IO
+        # object cannot be accessed randomly, but InfoZIP *always* sets this
+        # flag when using traditional encryption even though it will also write
+        # the data descriptor in the usual place if possible.  Failure to
+        # emulate InfoZIP in this behavior will prevent InfoZIP compatibility
+        # with encrypted entries.
+        general_purpose_flags |= FLAG_DATA_DESCRIPTOR_FOLLOWS
+      end
+
+      # Select the minimum ZIP specification version needed to extract this
+      # entry.
+      version_needed_to_extract = compression_codec.version_needed_to_extract
+      if encryption_codec.version_needed_to_extract > version_needed_to_extract then
+        version_needed_to_extract = encryption_codec.version_needed_to_extract
+      end
 
       bytes_written += io.write(CFH_SIGNATURE)
       bytes_written += io.write(
         [
           version_made_by,
-          codec.version_needed_to_extract,
+          version_needed_to_extract,
           general_purpose_flags,
-          codec.compression_method,
+          compression_codec.compression_method,
           mtime.to_dos_time.to_i
         ].pack('vvvvV')
       )
@@ -710,9 +830,6 @@ module Archive; class Zip; module Entry
   class Symlink
     include Archive::Zip::Entry
 
-    # A string indicating the target of a symlink.
-    attr_accessor :link_target
-
     # Returns the file type of this entry as the symbol <tt>:symlink</tt>.
     def ftype
       :symlink
@@ -729,6 +846,37 @@ module Archive; class Zip; module Entry
       super(0120000 | (mode & 07777))
     end
 
+    # Returns the link target for this entry.
+    #
+    # Raises Archive::Zip::EntryError if decoding the link target from an
+    # archive is required but fails.
+    def link_target
+      return @link_target unless @link_target.nil?
+
+      raw_data.rewind
+      encryption_codec.decryptor(raw_data, password) do |decryptor|
+        compression_codec.decompressor(decryptor) do |decompressor|
+          @link_target = decompressor.read
+          # Verify that the extracted data is good.
+          begin
+            unless expected_data_descriptor.nil? then
+              expected_data_descriptor.verify(decompressor.data_descriptor)
+            end
+          rescue => e
+            raise Zip::EntryError, "`#{zip_path}': #{e.message}"
+          end
+        end
+      end
+      @link_target
+    end
+
+    # Sets the link target for this entry.  As a side effect, the raw_data
+    # attribute is set to +nil+.
+    def link_target=(link_target)
+      raw_data = nil
+      @link_target = link_target
+    end
+
     # Extracts this entry.
     #
     # _options_ is a Hash optionally containing the following:
@@ -737,17 +885,18 @@ module Archive; class Zip; module Entry
     #   the zip path of this entry.
     # <b>:permissions</b>::
     #   When set to +false+ (the default), POSIX mode/permission bits will be
-    #   ignored.  Otherwise, they will be restored if possible.
+    #   ignored.  Otherwise, they will be restored if possible.  Not supported
+    #   on all platforms.
     # <b>:ownerships</b>::
     #   When set to +false+ (the default), user and group ownerships will be
     #   ignored.  On most systems, only a superuser is able to change
     #   ownerships, so setting this option to +true+ as a regular user may have
-    #   no effect.
+    #   no effect.  Not supported on all platforms.
     #
-    # Raises Archive::Zip::ExtractError if the link_target attribute is not
+    # Raises Archive::Zip::EntryError if the link_target attribute is not
     # specified.
     def extract(options = {})
-      raise Zip::ExtractError, 'link_target is nil' if link_target.nil?
+      raise Zip::EntryError, 'link_target is nil' if link_target.nil?
 
       # Ensure that unspecified options have default values.
       file_path           = options.has_key?(:file_path) ?
@@ -801,77 +950,14 @@ module Archive; class Zip; module Entry
     # Creates a new file entry where _zip_path_ is the path to the entry in the
     # ZIP archive.  The Archive::Zip::Codec::Deflate codec with the default
     # compression level set (NORMAL) is used by default for compression.
-    def initialize(zip_path)
-      super(zip_path)
+    # _raw_data_, if specified, must be a readable, IO-like object containing
+    # possibly compressed/encrypted file data for the entry.  It is intended to
+    # be used primarily by the Archive::Zip::Entry.parse class method.
+    def initialize(zip_path, raw_data = nil)
+      super(zip_path, raw_data)
       @file_path = nil
       @file_data = nil
-      @expected_data_descriptor = nil
-      @codec = Zip::Codec::Deflate.new
-    end
-
-    # An Archive::Zip::Entry::DataDescriptor instance which should contain the
-    # expected CRC32 checksum, compressed size, and uncompressed size for the
-    # file data.  When not +nil+, this is used by #extract to confirm that the
-    # data extraction was successful.
-    attr_accessor :expected_data_descriptor
-
-    # Returns a readable, IO-like object containing uncompressed file data.  If
-    # the file data has not been explicitly set previously, this will return a
-    # Archive::Zip::Codec::Store::Unstore instance wrapping either a File
-    # instance based on the +file_path+ attribute, if set, or an empty StringIO
-    # instance otherwise.
-    #
-    # <b>NOTE:</b> It is the responsibility of the user of this attribute to
-    # ensure that the #close method of the returned IO-like object is called
-    # when the object is no longer needed.
-    def file_data
-      if @file_data.nil? || @file_data.closed? then
-        if @file_path.nil? then
-          @file_data = StringIO.new
-        else
-          @file_data = ::File.new(@file_path, 'rb')
-        end
-        # Ensure that the IO-like object can return CRC32 and data size
-        # information so that it's possible to verify extraction later if
-        # desired.
-        @file_data = Zip::Codec::Store.new.decompressor(@file_data)
-      end
-      @file_data
-    end
-
-    # Sets the +file_data+ attribute of this object to _file_data_.  If
-    # _file_data_ is a String, it will be wrapped in a StringIO instance;
-    # otherwise, _file_data_ must be a readable, IO-like object.  _file_data_ is
-    # then wrapped inside an Archive::Zip::Codec::Store::Unstore instance before
-    # finally setting the +file_data+ attribute.
-    #
-    # <b>NOTE:</b> As a side effect, the +file_path+ attribute for this object
-    # will be set to +nil+.
-    def file_data=(file_data)
-      @file_path = nil
-      if file_data.kind_of?(String)
-        @file_data = StringIO.new(file_data)
-      else
-        @file_data = file_data
-      end
-      # Ensure that the IO-like object can return CRC32 and data size
-      # information so that it's possible to verify extraction later if desired.
-      unless @file_data.respond_to?(:data_descriptor) then
-        @file_data = Zip::Codec::Store.new.decompressor(@file_data)
-      end
-      @file_data
-    end
-
-    # The path to a file whose contents are to be used for uncompressed file
-    # data.  This will be +nil+ if the +file_data+ attribute is set directly.
-    attr_reader :file_path
-
-    # Sets the +file_path+ attribute to _file_path_ which should be a String
-    # usable with File#new to open a file for reading which will provide the
-    # IO-like object for the +file_data+ attribute.
-    def file_path=(file_path)
-      @file_data = nil
-      @file_path = file_path
+      @compression_codec = Zip::Codec::Deflate.new
     end
 
     # Returns the file type of this entry as the symbol <tt>:file</tt>.
@@ -888,6 +974,77 @@ module Archive; class Zip; module Entry
     # file.
     def mode=(mode)
       super(0100000 | (mode & 07777))
+    end
+
+    # Sets the decryption password.
+    def password=(password)
+      unless @raw_data.nil? then
+        @file_data = nil
+      end
+      @password = password
+    end
+
+    # The path to a file whose contents are to be used for uncompressed file
+    # data.  This will be +nil+ if the +file_data+ attribute is set directly.
+    attr_reader :file_path
+
+    # Sets the +file_path+ attribute to _file_path_ which should be a String
+    # usable with File#new to open a file for reading which will provide the
+    # IO-like object for the +file_data+ attribute.
+    def file_path=(file_path)
+      @file_data = nil
+      @raw_data = nil
+      @file_path = file_path
+    end
+
+    # Returns a readable, IO-like object containing uncompressed file data.
+    #
+    # <b>NOTE:</b> It is the responsibility of the user of this attribute to
+    # ensure that the #close method of the returned IO-like object is called
+    # when the object is no longer needed.
+    def file_data
+      return @file_data unless @file_data.nil? || @file_data.closed?
+
+      unless raw_data.nil? then
+        raw_data.rewind
+        @file_data = compression_codec.decompressor(
+          encryption_codec.decryptor(raw_data, password)
+        )
+      else
+        if @file_path.nil? then
+          simulated_raw_data = StringIO.new
+        else
+          simulated_raw_data = ::File.new(@file_path, 'rb')
+        end
+        # Ensure that the IO-like object can return a data descriptor so that
+        # it's possible to verify extraction later if desired.
+        @file_data = Zip::Codec::Store.new.decompressor(simulated_raw_data)
+      end
+      @file_data
+    end
+
+    # Sets the +file_data+ attribute of this object to _file_data_.  If
+    # _file_data_ is a String, it will be wrapped in a StringIO instance;
+    # otherwise, _file_data_ must be a readable, IO-like object.  _file_data_ is
+    # then wrapped inside an Archive::Zip::Codec::Store::Unstore instance before
+    # finally setting the +file_data+ attribute.
+    #
+    # <b>NOTE:</b> As a side effect, the +file_path+ and +raw_data+ attributes
+    # for this object will be set to +nil+.
+    def file_data=(file_data)
+      @file_path = nil
+      self.raw_data = nil
+      if file_data.kind_of?(String)
+        @file_data = StringIO.new(file_data)
+      else
+        @file_data = file_data
+      end
+      # Ensure that the IO-like object can return CRC32 and data size
+      # information so that it's possible to verify extraction later if desired.
+      unless @file_data.respond_to?(:data_descriptor) then
+        @file_data = Zip::Codec::Store.new.decompressor(@file_data)
+      end
+      @file_data
     end
 
     # Extracts this entry.
@@ -908,7 +1065,7 @@ module Archive; class Zip; module Entry
     #   When set to +false+ (the default), last accessed and last modified times
     #   will be ignored.  Otherwise, they will be restored if possible.
     #
-    # Raises Archive::Zip::ExtractError if the extracted file data appears
+    # Raises Archive::Zip::EntryError if the extracted file data appears
     # corrupt.
     def extract(options = {})
       # Ensure that unspecified options have default values.
@@ -942,7 +1099,7 @@ module Archive; class Zip; module Entry
           expected_data_descriptor.verify(file_data.data_descriptor)
         end
       rescue => e
-        raise Zip::ExtractError, "`#{zip_path}': #{e.message}"
+        raise Zip::EntryError, "`#{zip_path}': #{e.message}"
       end
 
       # Restore the metadata.

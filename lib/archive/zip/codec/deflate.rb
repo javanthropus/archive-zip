@@ -112,11 +112,12 @@ module Archive; class Zip; module Codec
       end
     end
 
-    # The numeric identifier assigned to this codec by the ZIP specification.
+    # The numeric identifier assigned to this compression codec by the ZIP
+    # specification.
     ID = 8
 
-    # Register this codec.
-    CODECS[ID] = self
+    # Register this compression codec.
+    COMPRESSION_CODECS[ID] = self
 
     # A bit mask used to denote that Zlib's default compression level should be
     # used.
@@ -131,7 +132,7 @@ module Archive; class Zip; module Codec
     SUPER_FAST = 0b110
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
     # Creates a new instance of this class using bits 1 and 2 of
     # _general_purpose_flags_ to select a compression level to be used by
@@ -155,7 +156,7 @@ module Archive; class Zip; module Codec
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
     # A convenience method for creating an
     # Archive::Zip::Codec::Deflate::Compress object using that class' open
@@ -166,7 +167,7 @@ module Archive; class Zip; module Codec
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
     # A convenience method for creating an
     # Archive::Zip::Codec::Deflate::Decompress object using that class' open
@@ -176,25 +177,25 @@ module Archive; class Zip; module Codec
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
     # Returns an integer which indicates the version of the official ZIP
-    # specification which introduced support for this codec.
+    # specification which introduced support for this compression codec.
     def version_needed_to_extract
       0x0014
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
-    # Returns an integer used to flag that this codec is used for a particular
-    # ZIP archive entry.
+    # Returns an integer used to flag that this compression codec is used for a
+    # particular ZIP archive entry.
     def compression_method
       ID
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
     # Returns an integer representing the general purpose flags of a ZIP archive
     # entry where bits 1 and 2 are set according to the compression level

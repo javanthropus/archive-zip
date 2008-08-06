@@ -9,7 +9,7 @@ module Archive; class Zip; module Codec
     # Archive::Zip::Codec::Store::Compress is simply a writable, IO-like wrapper
     # around a writable, IO-like object which provides a CRC32 checksum of the
     # data written through it as well as the count of the total amount of data.
-    # A #close method is also provided which can optionally close the delegate
+    # A _close_ method is also provided which can optionally close the delegate
     # object.  In addition a convenience method is provided for generating
     # DataDescriptor objects based on the data which is passed through this
     # object.
@@ -39,8 +39,8 @@ module Archive; class Zip; module Codec
       # must be writable and must provide a write method as IO does or errors
       # will be raised when performing write operations.
       #
-      # The _flush_size_ attribute is set to +0+ by default under the assumption
-      # that _io_ is already buffered.
+      # The _flush_size_ attribute is set to <tt>0</tt> by default under the
+      # assumption that _io_ is already buffered.
       def initialize(io)
         @io = io
         @crc32 = 0
@@ -88,7 +88,7 @@ module Archive; class Zip; module Codec
     # Archive::Zip::Codec::Store::Decompress is a readable, IO-like wrapper
     # around a readable, IO-like object which provides a CRC32 checksum of the
     # data read through it as well as the count of the total amount of data.  A
-    # #close method is also provided which can optionally close the delegate
+    # _close_ method is also provided which can optionally close the delegate
     # object.  In addition a convenience method is provided for generating
     # DataDescriptor objects based on the data which is passed through this
     # object.
@@ -119,8 +119,8 @@ module Archive; class Zip; module Codec
       # raised when performing read operations.  If _io_ provides a rewind
       # method, this class' rewind method will be enabled.
       #
-      # The _fill_size_ attribute is set to +0+ by default under the assumption
-      # that _io_ is already buffered.
+      # The _fill_size_ attribute is set to <tt>0</tt> by default under the
+      # assumption that _io_ is already buffered.
       def initialize(io)
         @io = io
         @crc32 = 0
@@ -165,8 +165,8 @@ module Archive; class Zip; module Codec
       end
 
       # Allows resetting this object and the delegate object back to the
-      # beginning of the stream.  _offset_ must be +0+ and _whence_ must be
-      # IO::SEEK_SET or an error will be raised.  The delegate object must
+      # beginning of the stream.  _offset_ must be <tt>0</tt> and _whence_ must
+      # be IO::SEEK_SET or an error will be raised.  The delegate object must
       # respond to the _rewind_ method or an error will be raised.  The
       # uncompressed_size and crc32 attributes are reinitialized as a side
       # effect.
@@ -183,14 +183,15 @@ module Archive; class Zip; module Codec
       end
     end
 
-    # The numeric identifier assigned to this codec by the ZIP specification.
+    # The numeric identifier assigned to this compresion codec by the ZIP
+    # specification.
     ID = 0
 
-    # Register this codec.
-    CODECS[ID] = self
+    # Register this compression codec.
+    COMPRESSION_CODECS[ID] = self
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
     # Creates a new instance of this class.  _general_purpose_flags_ is not
     # used.
@@ -198,7 +199,7 @@ module Archive; class Zip; module Codec
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
     # A convenience method for creating an Archive::Zip::Codec::Store::Compress
     # object using that class' open method.
@@ -207,7 +208,7 @@ module Archive; class Zip; module Codec
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
     # A convenience method for creating an
     # Archive::Zip::Codec::Store::Decompress object using that class' open
@@ -217,28 +218,28 @@ module Archive; class Zip; module Codec
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
     # Returns an integer which indicates the version of the official ZIP
-    # specification which introduced support for this codec.
+    # specification which introduced support for this compression codec.
     def version_needed_to_extract
       0x000a
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
-    # Returns an integer used to flag that this codec is used for a particular
-    # ZIP archive entry.
+    # Returns an integer used to flag that this compression codec is used for a
+    # particular ZIP archive entry.
     def compression_method
       ID
     end
 
     # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for codec objects.
+    # Archive::Zip::Entry for compression codec objects.
     #
-    # Returns +0+ since this codec does not make use of general purpose flags of
-    # ZIP archive entries.
+    # Returns <tt>0</tt> since this compression codec does not make use of
+    # general purpose flags of ZIP archive entries.
     def general_purpose_flags
       0
     end

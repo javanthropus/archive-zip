@@ -19,12 +19,12 @@ module Archive # :nodoc:
   # entries, directory entries, file entries, and symlink entries.  File and
   # directory accessed and modified times, POSIX permissions, and ownerships can
   # be archived and restored as well depending on platform support for such
-  # metadata.
+  # metadata.  Traditional (weak) encryption is also supported.
   #
-  # Zip64, digital signatures, and encryption are not supported.  ZIP archives
-  # can only be read from seekable kinds of IO, such as files; reading archives
-  # from pipes or any other non-seekable kind of IO is not supported.  However,
-  # writing to such IO objects <b><em>IS</em></b> supported.
+  # Zip64, digital signatures, and strong encryption are not supported.  ZIP
+  # archives can only be read from seekable kinds of IO, such as files; reading
+  # archives from pipes or any other non-seekable kind of IO is not supported.
+  # However, writing to such IO objects <b><em>IS</em></b> supported.
   class Zip
     include Enumerable
 
@@ -251,15 +251,24 @@ module Archive # :nodoc:
     #   from the archive and +false+ if it should be included.  <b>NOTE:</b> If
     #   a directory is excluded in this way, the <b>:recursion</b> option has no
     #   effect for it.
-    # <b>:ignore_error</b>::
-    #   When set to +false+ (the default), an error generated while creating an
-    #   archive entry for a file will be raised.  Otherwise, the bad file is
-    #   skipped.
+    # <b>:password</b>::
+    #   Specifies a proc, lambda, or a String.  If a proc or lambda is used, it
+    #   must take a single argument containing a zip entry and return a String
+    #   to be used as an encryption key for the entry.  If a String is used, it
+    #   will be used as an encryption key for all encrypted entries.
+    # <b>:on_error</b>::
+    #   Specifies a proc or lambda which is called when an exception is raised
+    #   during the archival of an entry.  It takes two arguments, a file path
+    #   and an exception object generated while attempting to archive the entry.
+    #   If <tt>:retry</tt> is returned, archival of the entry is attempted
+    #   again.  If <tt>:skip</tt> is returned, the entry is skipped.  Otherwise,
+    #   the exception is raised.
     # Any other options which are supported by Archive::Zip::Entry.from_file are
     # also supported.
     #
     # Raises Archive::Zip::IOError if called after #close.  Raises
-    # Archive::Zip::EntryError if the <b>:ignore_error</b> option is +false+ and
+    # Archive::Zip::EntryError if the <b>:on_error</b> option is either unset or
+    # indicates that the error should be raised and
     # Archive::Zip::Entry.from_file raises an error.
     #
     # == Example
@@ -333,7 +342,6 @@ module Archive # :nodoc:
       options[:directories]  = true  unless options.has_key?(:directories)
       options[:symlinks]     = false unless options.has_key?(:symlinks)
       options[:flatten]      = false unless options.has_key?(:flatten)
-      options[:ignore_error] = false unless options.has_key?(:ignore_error)
 
       # Flattening the directory structure implies that directories are skipped
       # and that the path prefix should be ignored.
@@ -364,10 +372,16 @@ module Archive # :nodoc:
                                   ! options[:symlinks]
             )
           )
-        rescue Zip::EntryError
-          # Ignore the error if requested.
-          if options[:ignore_error] then
-            next
+        rescue StandardError => error
+          unless options[:on_error].nil? then
+            case options[:on_error][path, error]
+            when :retry
+              retry
+            when :skip
+              next
+            else
+              raise
+            end
           else
             raise
           end
@@ -375,15 +389,21 @@ module Archive # :nodoc:
 
         # Skip this entry if so directed.
         if (zip_entry.symlink? && ! options[:symlinks]) ||
-           (! options[:exclude].nil? && options[:exclude].call(zip_entry)) then
+           (! options[:exclude].nil? && options[:exclude][zip_entry]) then
           next
+        end
+
+        # Set the encryption key for the entry.
+        if options[:password].kind_of?(String) then
+          zip_entry.password = options[:password]
+        elsif ! options[:password].nil? then
+          zip_entry.password = options[:password][zip_entry]
         end
 
         # Add entries for directories (if requested) and files/symlinks.
         if (! zip_entry.directory? || options[:directories]) then
           add_entry(zip_entry)
         end
-
 
         # Recurse into subdirectories (if requested).
         if zip_entry.directory? && options[:recursion] then
@@ -436,6 +456,18 @@ module Archive # :nodoc:
     #   Specifies a proc or lambda which takes a single argument containing a
     #   zip entry and returns +true+ if the entry should be skipped during
     #   extraction and +false+ if it should be extracted.
+    # <b>:password</b>::
+    #   Specifies a proc, lambda, or a String.  If a proc or lambda is used, it
+    #   must take a single argument containing a zip entry and return a String
+    #   to be used as a decryption key for the entry.  If a String is used, it
+    #   will be used as a decryption key for all encrypted entries.
+    # <b>:on_error</b>::
+    #   Specifies a proc or lambda which is called when an exception is raised
+    #   during the extraction of an entry.  It takes two arguments, a zip entry
+    #   and an exception object generated while attempting to extract the entry.
+    #   If <tt>:retry</tt> is returned, extraction of the entry is attempted
+    #   again.  If <tt>:skip</tt> is returned, the entry is skipped.  Otherwise,
+    #   the exception is raised.
     # Any other options which are supported by Archive::Zip::Entry#extract are
     # also supported.
     #
@@ -522,23 +554,44 @@ module Archive # :nodoc:
         file_exists = File.exist?(file_path)
         file_mtime = File.mtime(file_path) if file_exists
 
-        # Skip this entry if so directed.
-        if (! file_exists && ! options[:create]) ||
-           (file_exists &&
-            (options[:overwrite] == :never ||
-             options[:overwrite] == :older && entry.mtime <= file_mtime)) ||
-           (! options[:exclude].nil? && options[:exclude].call(entry)) then
-          next
-        end
+        begin
+          # Skip this entry if so directed.
+          if (! file_exists && ! options[:create]) ||
+             (file_exists &&
+              (options[:overwrite] == :never ||
+               options[:overwrite] == :older && entry.mtime <= file_mtime)) ||
+             (! options[:exclude].nil? && options[:exclude][entry]) then
+            next
+          end
 
-        if entry.directory? then
-          # Record the directories as they are encountered.
-          directories << entry
-        elsif entry.file? || (entry.symlink? && options[:symlinks]) then
-          # Extract files and symlinks.
-          entry.extract(
-            options.merge(:file_path => file_path)
-          )
+          # Set the decryption key for the entry.
+          if options[:password].kind_of?(String) then
+            entry.password = options[:password]
+          elsif ! options[:password].nil? then
+            entry.password = options[:password][entry]
+          end
+
+          if entry.directory? then
+            # Record the directories as they are encountered.
+            directories << entry
+          elsif entry.file? || (entry.symlink? && options[:symlinks]) then
+            # Extract files and symlinks.
+            entry.extract(
+              options.merge(:file_path => file_path)
+            )
+          end
+        rescue StandardError => error
+          unless options[:on_error].nil? then
+            case options[:on_error][entry, error]
+            when :retry
+              retry
+            when :skip
+            else
+              raise
+            end
+          else
+            raise
+          end
         end
       end
 
@@ -546,9 +599,25 @@ module Archive # :nodoc:
         # Then extract the directory entries in depth first order so that time
         # stamps, ownerships, and permissions can be properly restored.
         directories.sort { |a, b| b.zip_path <=> a.zip_path }.each do |entry|
-          entry.extract(
-            options.merge(:file_path => File.join(destination, entry.zip_path))
-          )
+          begin
+            entry.extract(
+              options.merge(
+                :file_path => File.join(destination, entry.zip_path)
+              )
+            )
+          rescue StandardError => error
+            unless options[:on_error].nil? then
+              case options[:on_error][entry, error]
+              when :retry
+                retry
+              when :skip
+              else
+                raise
+              end
+            else
+              raise
+            end
+          end
         end
       end
 
