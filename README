@@ -56,6 +56,23 @@ Create a few archives:
     :path_prefix => 'a/b/c'
   )
 
+  # Add the contents of a_directory to example5.zip and encrypt Ruby source
+  # files.
+  require 'archive/zip/codec/null_encryption'
+  require 'archive/zip/codec/traditional_encryption'
+  Archive::Zip.archive(
+    'example5.zip',
+    'a_directory/.',
+    :encryption_codec => lambda do |entry|
+      if entry.file? and entry.zip_path =~ /\.rb$/ then
+        Archive::Zip::Codec::TraditionalEncryption
+      else
+        Archive::Zip::Codec::NullEncryption
+      end
+    end,
+    :password => 'seakrit'
+  )
+
   # Create a new archive which will be written to a pipe.
   # Assume $stdout is the write end a pipe.
   # (ruby example.rb | cat >example.zip)
@@ -92,6 +109,9 @@ Now extract those archives:
     :create => false,
     :overwrite => :older
   )
+
+  # Extract example5.zip to a_destination, decrypting the contents.
+  Archive::Zip.extract('example5.zip', 'a_destination', :password => 'seakrit')
 
 
 == Features
