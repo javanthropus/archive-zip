@@ -25,4 +25,3 @@ lib/archive/zip/extra_field.rb
 lib/archive/zip/extra_field/extended_timestamp.rb
 lib/archive/zip/extra_field/raw.rb
 lib/archive/zip/extra_field/unix.rb
-test/test_archive.rb

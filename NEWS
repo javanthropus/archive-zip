@@ -6,6 +6,16 @@ detailed information is available in the rest of the documentation.
 <b>NOTE:</b> Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+== v0.2.0 (2008/08/06)
+
+* Traditional (weak) encryption is now supported.
+* Adding new encryption methods should be easier now.
+* Fixed a bug where the compression codec for an entry loaded from an archive
+  was not being recorded.
+* The _compression_codec_ attribute for Entry instances is now used instead of
+  the _codec_ attribute to access the compression codec of the entry.
+
+
 == v0.1.1 (2008/07/11)
 
 * Archive files are now closed when the Archive::Zip object is closed even when
@@ -15,15 +25,15 @@ detailed information is available in the rest of the documentation.
 
 == v0.1.0 (2008/07/10)
 
-* Initial release
-* Archive creation and extraction is supported with only a few lines of code
+* Initial release.
+* Archive creation and extraction is supported with only a few lines of code.
   (See README)
-* Archives can be updated "in place" or dumped out to other files or pipes
-* Files, symlinks, and directories are supported within archives
-* Unix permission/mode bits are supported
+* Archives can be updated "in place" or dumped out to other files or pipes.
+* Files, symlinks, and directories are supported within archives.
+* Unix permission/mode bits are supported.
 * Unix user and group ownerships are supported.
 * Unix last accessed and last modified times are supported.
 * Entry extension (AKA extra field) implementations can be added on the fly.
 * Unknown entry extension types are preserved during archive processing.
-* Deflate and Store compression codecs supported out of the box
-* More compression codecs can be added on the fly
+* Deflate and Store compression codecs are supported out of the box.
+* More compression codecs can be added on the fly.

@@ -8,7 +8,7 @@ require 'rubygems'
 PKG_NAME    = 'archive-zip'
 
 # The current version of this gem.  Increment for each new release.
-PKG_VERSION = '0.1.1'
+PKG_VERSION = '0.2.0'
 
 # The location where documentation should be created.
 # NOTE: This MUST have a slash on the end or document publishing will not work
@@ -122,7 +122,17 @@ end
 
 desc 'Create the CHANGELOG file'
 task :changelog do
-  sh "git log > CHANGELOG"
+  File.open('CHANGELOG', 'w') do |changelog|
+    IO.popen('git log') do |git|
+      git.each do |line|
+        # Protect email addresses from spammers.
+        line.gsub!(
+          /([a-z0-9!\#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!\#$%&'*+\/=?^_`{|}~-]+)*)@((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)/i
+        ) { |match| "#{$1} at #{$2.gsub('.', ' dot ')}" }
+        changelog.puts(line)
+      end
+    end
+  end
 end
 
 desc 'Create/Update the MANIFEST file'
@@ -141,7 +151,7 @@ task :check_manifest do
     common_files = manifest_files & pkg_files
     manifest_files.delete_if { |file| common_files.include?(file) }
     pkg_files.delete_if { |file| common_files.include?(file) }
-    $stderr.puts('The manifest does not match package file list')
+    $stderr.puts('The manifest does not match the package file list')
     unless manifest_files.empty? then
       $stderr.puts("  Extraneous files:\n    " + manifest_files.join("\n    "))
     end
