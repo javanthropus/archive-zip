@@ -111,6 +111,10 @@ module Zlib # :nodoc:
   class ZReader
     include IO::Like
 
+    # The number of bytes to read from the delegate object each time the
+    # internal read buffer is filled.
+    DEFAULT_DELEGATE_READ_SIZE = 4096
+
     # Creates a new instance of this class with the given arguments using #new
     # and then passes the instance to the given block.  The #close method is
     # guaranteed to be called after the block completes.
@@ -138,6 +142,7 @@ module Zlib # :nodoc:
     # collected.  Make sure to call #close when finished with this object.
     def initialize(io, window_bits = nil)
       @delegate = io
+      @delegate_read_size = DEFAULT_DELEGATE_READ_SIZE
       @window_bits = window_bits
       @inflater = Zlib::Inflate.new(@window_bits)
       @crc32 = 0
@@ -150,6 +155,10 @@ module Zlib # :nodoc:
     # any time the buffer is filled, so this count is only accurate if all data
     # has been read out of this object.
     attr_reader :crc32
+
+    # The number of bytes to read from the delegate object each time the
+    # internal read buffer is filled.
+    attr_accessor :delegate_read_size
 
     protected
 
@@ -180,11 +189,14 @@ module Zlib # :nodoc:
     private
 
     def unbuffered_read(length)
-      raise EOFError, 'end of file reached' if @inflater.finished?
+      if @decompress_buffer.empty? && @inflater.finished? then
+        raise EOFError, 'end of file reached'
+      end
 
       begin
         while @decompress_buffer.length < length && ! @inflater.finished? do
-          @decompress_buffer << @inflater.inflate(delegate.read(1))
+          @decompress_buffer <<
+            @inflater.inflate(delegate.read(@delegate_read_size))
         end
       rescue Errno::EINTR, Errno::EAGAIN
         raise if @decompress_buffer.empty?
