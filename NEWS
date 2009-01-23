@@ -6,6 +6,13 @@ detailed information is available in the rest of the documentation.
 <b>NOTE:</b> Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+== v0.3.0 (2009/01/23)
+
+* Made a significant performance improvement for the extraction of compressed
+  entries for performance on par with InfoZIP's unzip.  Parsing archives with
+  many entries is still a bit subpar however.
+
+
 == v0.2.0 (2008/08/06)
 
 * Traditional (weak) encryption is now supported.

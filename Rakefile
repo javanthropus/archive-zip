@@ -8,7 +8,7 @@ require 'rubygems'
 PKG_NAME    = 'archive-zip'
 
 # The current version of this gem.  Increment for each new release.
-PKG_VERSION = '0.2.0'
+PKG_VERSION = '0.3.0'
 
 # The location where documentation should be created.
 # NOTE: This MUST have a slash on the end or document publishing will not work
