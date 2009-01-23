@@ -25,10 +25,10 @@ module Archive; class Zip
     # like-named attributes of _other_ and raises Archive::Zip::Error for any
     # mismatches.
     #
-    # NOTE: The compressed_size attribute is not checked because encrypted
-    # entries may have misleading compressed sizes.  Checking only the CRC32 and
-    # uncompressed size of the data should be sufficient to ensure that an entry
-    # has been successfully extracted.
+    # <b>NOTE:</b> The compressed_size attribute is not checked because
+    # encrypted entries may have misleading compressed sizes.  Checking only the
+    # CRC32 and uncompressed size of the data should be sufficient to ensure
+    # that an entry has been successfully extracted.
     def verify(other)
       unless crc32 == other.crc32 then
         raise Zip::Error,

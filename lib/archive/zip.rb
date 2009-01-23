@@ -626,8 +626,8 @@ module Archive # :nodoc:
 
     private
 
-    # NOTE: For now _io_ MUST be seekable and report such by returning +true+
-    # from its seekable? method.  See IO#seekable?.
+    # <b>NOTE:</b> For now _io_ MUST be seekable and report such by returning
+    # +true+ from its seekable? method.  See IO#seekable?.
     #
     # Raises Archive::Zip::IOError if _io_ is not seekable.
     def parse(io)

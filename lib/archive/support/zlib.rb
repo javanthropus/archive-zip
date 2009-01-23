@@ -34,8 +34,8 @@ module Zlib # :nodoc:
     # and _strategy_ are all passed directly to Zlib::Deflate.new().  See the
     # documentation of that method for their meanings.
     #
-    # NOTE: Due to limitations in Ruby's finalization capabilities, the #close
-    # method is _not_ automatically called when this object is garbage
+    # <b>NOTE:</b> Due to limitations in Ruby's finalization capabilities, the
+    # #close method is _not_ automatically called when this object is garbage
     # collected.  Make sure to call #close when finished with this object.
     def initialize(io, level = Zlib::DEFAULT_COMPRESSION, window_bits = nil, mem_level = nil, strategy = nil)
       @delegate = io
@@ -46,9 +46,9 @@ module Zlib # :nodoc:
 
     # The CRC32 checksum of the uncompressed data written using this object.
     #
-    # NOTE: Anything still in the internal write buffer has not been processed,
-    # so calling #flush prior to examining this attribute may be necessary for
-    # an accurate computation.
+    # <b>NOTE:</b> Anything still in the internal write buffer has not been
+    # processed, so calling #flush prior to examining this attribute may be
+    # necessary for an accurate computation.
     attr_reader :crc32
 
     protected
@@ -70,18 +70,18 @@ module Zlib # :nodoc:
 
     # Returns the number of bytes of compressed data produced so far.
     #
-    # NOTE: Anything still in the internal write buffer has not been processed,
-    # so calling #flush prior to calling this method may be necessary for an
-    # accurate count.
+    # <b>NOTE:</b> Anything still in the internal write buffer has not been
+    # processed, so calling #flush prior to calling this method may be necessary
+    # for an accurate count.
     def compressed_size
       @deflater.total_out
     end
 
     # Returns the number of bytes sent to be compressed so far.
     #
-    # NOTE: Anything still in the internal write buffer has not been processed,
-    # so calling #flush prior to calling this method may be necessary for an
-    # accurate count.
+    # <b>NOTE:</b> Anything still in the internal write buffer has not been
+    # processed, so calling #flush prior to calling this method may be necessary
+    # for an accurate count.
     def uncompressed_size
       @deflater.total_in
     end
@@ -137,8 +137,8 @@ module Zlib # :nodoc:
     # meaning.  If _io_ also responds to _rewind_, then the _rewind_ method of
     # this class can be used to reset the whole stream back to the beginning.
     #
-    # NOTE: Due to limitations in Ruby's finalization capabilities, the #close
-    # method is _not_ automatically called when this object is garbage
+    # <b>NOTE:</b> Due to limitations in Ruby's finalization capabilities, the
+    # #close method is _not_ automatically called when this object is garbage
     # collected.  Make sure to call #close when finished with this object.
     def initialize(io, window_bits = nil)
       @delegate = io
@@ -151,9 +151,9 @@ module Zlib # :nodoc:
 
     # The CRC32 checksum of the uncompressed data read using this object.
     #
-    # NOTE: The contents of the internal read buffer are immediately processed
-    # any time the buffer is filled, so this count is only accurate if all data
-    # has been read out of this object.
+    # <b>NOTE:</b> The contents of the internal read buffer are immediately
+    # processed any time the buffer is filled, so this count is only accurate if
+    # all data has been read out of this object.
     attr_reader :crc32
 
     # The number of bytes to read from the delegate object each time the
