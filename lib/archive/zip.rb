@@ -242,9 +242,10 @@ module Archive # :nodoc:
     # <b>:flatten</b>::
     #   When set to +false+ (the default), the directory paths containing
     #   archived files will be included in the zip paths of entries representing
-    #   the files.  When set to +true+ files are archived without any containing
-    #   directory structure in the zip paths.  Setting to +true+ implies that
-    #   <b>:directories</b> is +false+ and <b>:path_prefix</b> is empty.
+    #   the files.  When set to +true+, files are archived without any
+    #   containing directory structure in the zip paths.  Setting to +true+
+    #   implies that <b>:directories</b> is +false+ and <b>:path_prefix</b> is
+    #   empty.
     # <b>:exclude</b>::
     #   Specifies a proc or lambda which takes a single argument containing a
     #   prospective zip entry and returns +true+ if the entry should be excluded
@@ -444,13 +445,13 @@ module Archive # :nodoc:
     #   <tt>:all</tt>.
     # <b>:create</b>::
     #   When set to +true+ (the default), files and directories which do not
-    #   already exist will be extracted.  When set to +false+ only files and
+    #   already exist will be extracted.  When set to +false+, only files and
     #   directories which already exist will be extracted (depending on the
     #   setting of <b>:overwrite</b>).
     # <b>:flatten</b>::
     #   When set to +false+ (the default), the directory paths containing
     #   extracted files will be created within +destination+ in order to contain
-    #   the files.  When set to +true+ files are extracted directly to
+    #   the files.  When set to +true+, files are extracted directly to
     #   +destination+ and directory entries are skipped.
     # <b>:exclude</b>::
     #   Specifies a proc or lambda which takes a single argument containing a
