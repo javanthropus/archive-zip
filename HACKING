@@ -12,6 +12,7 @@ some cases, but such cases will be rare.
 === Runtime
 
 * Ruby 1.8.6 or greater
+* io-like 0.2.0 or greater
 
 
 === Build
