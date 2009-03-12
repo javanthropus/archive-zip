@@ -275,8 +275,6 @@ module Archive; class Zip
 
       # Set the expected data descriptor so that extraction can be verified.
       entry.expected_data_descriptor = expected_data_descriptor
-      # Record the raw file data for the entry.
-      entry.raw_data = IOWindow.new(io, io.pos, cfr.compressed_size)
       # Record the compression codec.
       entry.compression_codec = compression_codec
       # Record the encryption codec.
