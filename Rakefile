@@ -53,7 +53,7 @@ MISC_FILES  = FileList.new(
 )
 
 # All the files which are to be included within the package.
-PKG_FILES   = LIB_FILES + TEST_FILES + DOC_FILES + MISC_FILES
+PKG_FILES   = LIB_FILES + DOC_FILES + MISC_FILES
 
 # Files used by the rdoc task.
 RDOC_FILES  = LIB_FILES + DOC_FILES
