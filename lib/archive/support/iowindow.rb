@@ -1,7 +1,7 @@
 require 'archive/support/io-like'
 
-# IOWindow represents an IO object which wraps another one allowing read access
-# to a subset of the data within the stream.
+# IOWindow represents an IO object which wraps another one allowing read and/or
+# write access to a subset of the data within the stream.
 #
 # <b>NOTE:</b> This object is NOT thread safe.
 class IOWindow
