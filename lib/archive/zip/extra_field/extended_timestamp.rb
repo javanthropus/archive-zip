@@ -24,7 +24,7 @@ module Archive; class Zip; module ExtraField
         raise Zip::ExtraFieldError,
           "invalid size for extended timestamp: #{data.size}"
       end
-      flags, *times = data.unpack('C' + 'V' * ((data.size - 1) / 4))
+      flags, *times = data.unpack('CV*')
       mtime = nil
       atime = nil
       crtime = nil
