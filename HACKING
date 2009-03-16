@@ -18,7 +18,7 @@ some cases, but such cases will be rare.
 === Build
 
 * rubygems 0.9.0 or greater
-* rake 0.8.1 or greater
+* rake 0.8.3 or greater
 * allison 2.0.3 (optional - used for documentation only, if available)
 * rsync (optional - used for publishing documentation)
 
