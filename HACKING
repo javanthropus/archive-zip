@@ -19,6 +19,7 @@ some cases, but such cases will be rare.
 
 * rubygems 0.9.0 or greater
 * rake 0.8.3 or greater
+* mspec 1.5.9 or greater (optional - used for testing)
 * allison 2.0.3 (optional - used for documentation only, if available)
 * rsync (optional - used for publishing documentation)
 
