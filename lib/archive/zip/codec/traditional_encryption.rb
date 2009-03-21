@@ -203,8 +203,8 @@ module Archive; class Zip; module Codec
       end
 
       # Closes this object so that further write operations will fail.  If
-      # _close_delegate_ is +true+, the delegate object used as a data sink will
-      # also be closed using its close method.
+      # _close_delegate_ is +true+, the delegate object used as a data source
+      # will also be closed using its close method.
       def close(close_delegate = true)
         super()
         io.close if close_delegate
