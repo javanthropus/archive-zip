@@ -134,8 +134,24 @@ module Zlib # :nodoc:
     # Creates a new instance of this class.  _io_ must respond to the _read_
     # method as an IO instance would.  _window_bits_ is passed directly to
     # Zlib::Inflate.new().  See the documentation of that method for its
-    # meaning.  If _io_ also responds to _rewind_, then the _rewind_ method of
-    # this class can be used to reset the whole stream back to the beginning.
+    # meaning.
+    #
+    # This class has extremely limited seek capabilities.  It is possible to
+    # seek with an offset of <tt>0</tt> and a whence of <tt>IO::SEEK_CUR</tt>.
+    # As a result, the _pos_ and _tell_ methods also work as expected.
+    #
+    # Due to certain optimizations within IO::Like#seek and if there is data in
+    # the read buffer, the _seek_ method can be used to seek forward from the
+    # current stream position up to the end of the buffer.  Unless it is known
+    # definitively how much data is in the buffer, it is best to avoid relying
+    # on this behavior.
+    #
+    # If _io_ also responds to _rewind_, then the _rewind_ method of this class
+    # can be used to reset the whole stream back to the beginning. Using _seek_
+    # of this class to seek directly to offset <tt>0</tt> using
+    # <tt>IO::SEEK_SET</tt> for whence will also work in this case.
+    #
+    # Any other seeking attempts, will raise Errno::EINVAL exceptions.
     #
     # <b>NOTE:</b> Due to limitations in Ruby's finalization capabilities, the
     # #close method is _not_ automatically called when this object is garbage
@@ -145,8 +161,8 @@ module Zlib # :nodoc:
       @delegate_read_size = DEFAULT_DELEGATE_READ_SIZE
       @window_bits = window_bits
       @inflater = Zlib::Inflate.new(@window_bits)
-      @crc32 = 0
       @decompress_buffer = ''
+      @crc32 = 0
     end
 
     # The CRC32 checksum of the uncompressed data read using this object.
@@ -206,18 +222,31 @@ module Zlib # :nodoc:
       buffer
     end
 
+    # Allows resetting this object and the delegate object back to the beginning
+    # of the stream or reporting the current position in the stream.
+    #
+    # Raises Errno::EINVAL unless _offset_ is <tt>0</tt> and _whence_ is either
+    # IO::SEEK_SET or IO::SEEK_CUR.  Raises Errno::EINVAL if _whence_ is
+    # IO::SEEK_SEK and the delegate object does not respond to the _rewind_
+    # method.
     def unbuffered_seek(offset, whence = IO::SEEK_SET)
-      unless offset == 0 && whence == IO::SEEK_SET then
+      unless offset == 0 &&
+             ((whence == IO::SEEK_SET && delegate.respond_to?(:rewind)) ||
+              whence == IO::SEEK_CUR) then
         raise Errno::EINVAL, 'Invalid argument'
       end
-      unless delegate.respond_to?(:rewind) then
-        raise Errno::ESPIPE, 'Illegal seek'
+
+      case whence
+      when IO::SEEK_SET
+        delegate.rewind
+        @inflater.close
+        @inflater = Zlib::Inflate.new(@window_bits)
+        @crc32 = 0
+        @decompress_buffer = ''
+        0
+      when IO::SEEK_CUR
+        @inflater.total_out - @decompress_buffer.length
       end
-      delegate.rewind
-      @inflater.close
-      @inflater = Zlib::Inflate.new(@window_bits)
-      @crc32 = 0
-      @decompress_buffer = ''
     end
   end
 end
