@@ -164,7 +164,7 @@ module Zlib # :nodoc:
       @delegate_read_size = DEFAULT_DELEGATE_READ_SIZE
       @window_bits = window_bits
       @inflater = Zlib::Inflate.new(@window_bits)
-      @decompress_buffer = ''
+      @inflate_buffer = ''
       @crc32 = 0
     end
 
@@ -208,19 +208,19 @@ module Zlib # :nodoc:
     private
 
     def unbuffered_read(length)
-      if @decompress_buffer.empty? && @inflater.finished? then
+      if @inflate_buffer.empty? && @inflater.finished? then
         raise EOFError, 'end of file reached'
       end
 
       begin
-        while @decompress_buffer.length < length && ! @inflater.finished? do
-          @decompress_buffer <<
+        while @inflate_buffer.length < length && ! @inflater.finished? do
+          @inflate_buffer <<
             @inflater.inflate(delegate.read(@delegate_read_size))
         end
       rescue Errno::EINTR, Errno::EAGAIN
-        raise if @decompress_buffer.empty?
+        raise if @inflate_buffer.empty?
       end
-      buffer = @decompress_buffer.slice!(0, length)
+      buffer = @inflate_buffer.slice!(0, length)
       @crc32 = Zlib.crc32(buffer, @crc32)
       buffer
     end
@@ -245,10 +245,10 @@ module Zlib # :nodoc:
         @inflater.close
         @inflater = Zlib::Inflate.new(@window_bits)
         @crc32 = 0
-        @decompress_buffer = ''
+        @inflate_buffer = ''
         0
       when IO::SEEK_CUR
-        @inflater.total_out - @decompress_buffer.length
+        @inflater.total_out - @inflate_buffer.length
       end
     end
   end
