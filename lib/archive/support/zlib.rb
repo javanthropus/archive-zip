@@ -63,8 +63,13 @@ module Zlib # :nodoc:
     #
     # Raises IOError if called more than once.
     def close
+      flush()
+      @deflate_buffer << @deflater.finish unless @deflater.finished?
+      until @deflate_buffer.empty? do
+        @deflate_buffer.slice!(0, delegate.write(@deflate_buffer))
+      end
+      @deflater.close
       super()
-      delegate.write(@deflater.finish)
       nil
     end
 
@@ -89,17 +94,15 @@ module Zlib # :nodoc:
     private
 
     def unbuffered_write(string)
+      # First try to write out the contents of the deflate buffer because if
+      # that raises a failure we can let that pass up the call stack without
+      # having polluted the deflater instance.
       until @deflate_buffer.empty? do
         @deflate_buffer.slice!(0, delegate.write(@deflate_buffer))
       end
+      # At this point we can deflate the given string into a new buffer and
+      # behave as if it was written.
       @deflate_buffer = @deflater.deflate(string)
-
-      begin
-        @deflate_buffer.slice!(0, delegate.write(@deflate_buffer))
-      rescue Errno::EINTR, Errno::EAGAIN
-        # Ignore this because everything is in the deflate buffer and will be
-        # attempted again the next time this method is called.
-      end
       @crc32 = Zlib.crc32(string, @crc32)
       string.length
     end
