@@ -65,8 +65,12 @@ module Zlib # :nodoc:
     def close
       flush()
       @deflate_buffer << @deflater.finish unless @deflater.finished?
-      until @deflate_buffer.empty? do
-        @deflate_buffer.slice!(0, delegate.write(@deflate_buffer))
+      begin
+        until @deflate_buffer.empty? do
+          @deflate_buffer.slice!(0, delegate.write(@deflate_buffer))
+        end
+      rescue Errno::EAGAIN, Errno::EINTR
+        retry if write_ready?
       end
       @deflater.close
       super()
