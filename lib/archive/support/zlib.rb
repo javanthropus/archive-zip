@@ -240,7 +240,7 @@ module Zlib # :nodoc:
       unless offset == 0 &&
              ((whence == IO::SEEK_SET && delegate.respond_to?(:rewind)) ||
               whence == IO::SEEK_CUR) then
-        raise Errno::EINVAL, 'Invalid argument'
+        raise Errno::EINVAL
       end
 
       case whence
