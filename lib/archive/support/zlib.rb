@@ -34,12 +34,25 @@ module Zlib # :nodoc:
     # and _strategy_ are all passed directly to Zlib::Deflate.new().  See the
     # documentation of that method for their meanings.
     #
+    # This class has extremely limited seek capabilities.  It is possible to
+    # seek with an offset of <tt>0</tt> and a whence of <tt>IO::SEEK_CUR</tt>.
+    # As a result, the _pos_ and _tell_ methods also work as expected.
+    #
+    # If _io_ also responds to _rewind_, then the _rewind_ method of this class
+    # can be used to reset the whole stream back to the beginning. Using _seek_
+    # of this class to seek directly to offset <tt>0</tt> using
+    # <tt>IO::SEEK_SET</tt> for whence will also work in this case.
+    #
     # <b>NOTE:</b> Due to limitations in Ruby's finalization capabilities, the
     # #close method is _not_ automatically called when this object is garbage
     # collected.  Make sure to call #close when finished with this object.
     def initialize(io, level = Zlib::DEFAULT_COMPRESSION, window_bits = nil, mem_level = nil, strategy = nil)
       @delegate = io
-      @deflater = Zlib::Deflate.new(level, window_bits, mem_level, strategy)
+      @level = level
+      @window_bits = window_bits
+      @mem_level = mem_level
+      @strategy = strategy
+      @deflater = Zlib::Deflate.new(@level, @window_bits, @mem_level, @strategy)
       @deflate_buffer = ''
       @crc32 = 0
     end
@@ -96,6 +109,36 @@ module Zlib # :nodoc:
     end
 
     private
+
+    # Allows resetting this object and the delegate object back to the beginning
+    # of the stream or reporting the current position in the stream.
+    #
+    # Raises Errno::EINVAL unless _offset_ is <tt>0</tt> and _whence_ is either
+    # IO::SEEK_SET or IO::SEEK_CUR.  Raises Errno::EINVAL if _whence_ is
+    # IO::SEEK_SEK and the delegate object does not respond to the _rewind_
+    # method.
+    def unbuffered_seek(offset, whence = IO::SEEK_SET)
+      unless offset == 0 &&
+             ((whence == IO::SEEK_SET && delegate.respond_to?(:rewind)) ||
+              whence == IO::SEEK_CUR) then
+        raise Errno::EINVAL
+      end
+
+      case whence
+      when IO::SEEK_SET
+        delegate.rewind
+        @deflater.finish
+        @deflater.close
+        @deflater = Zlib::Deflate.new(
+          @level, @window_bits, @mem_level, @strategy
+        )
+        @crc32 = 0
+        @deflate_buffer = ''
+        0
+      when IO::SEEK_CUR
+        @deflater.total_in
+      end
+    end
 
     def unbuffered_write(string)
       # First try to write out the contents of the deflate buffer because if

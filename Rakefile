@@ -87,7 +87,7 @@ tools.
   s.homepage      = "http://#{PKG_NAME}.rubyforge.org"
   s.files         = PKG_FILES
   s.required_ruby_version = '>= 1.8.1'
-  s.add_dependency('io-like', '>= 0.1.0')
+  s.add_dependency('io-like', '>= 0.3.0')
 
   s.has_rdoc      = true
   s.extra_rdoc_files = DOC_FILES
