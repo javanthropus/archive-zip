@@ -18,8 +18,8 @@ module Zlib # :nodoc:
     # guaranteed to be called after the block completes.
     #
     # Equivalent to #new if no block is given.
-    def self.open(io, level = Zlib::DEFAULT_COMPRESSION, window_bits = nil, mem_level = nil, strategy = nil)
-      zw = new(io, level, window_bits, mem_level, strategy)
+    def self.open(delegate, level = Zlib::DEFAULT_COMPRESSION, window_bits = nil, mem_level = nil, strategy = nil)
+      zw = new(delegate, level, window_bits, mem_level, strategy)
       return zw unless block_given?
 
       begin
@@ -29,25 +29,26 @@ module Zlib # :nodoc:
       end
     end
 
-    # Creates a new instance of this class.  _io_ must respond to the _write_
-    # method as an instance of IO would.  _level_, _window_bits_, _mem_level_,
-    # and _strategy_ are all passed directly to Zlib::Deflate.new().  See the
-    # documentation of that method for their meanings.
+    # Creates a new instance of this class.  _delegate_ must respond to the
+    # _write_ method as an instance of IO would.  _level_, _window_bits_,
+    # _mem_level_, and _strategy_ are all passed directly to
+    # Zlib::Deflate.new().  See the documentation of that method for their
+    # meanings.
     #
     # This class has extremely limited seek capabilities.  It is possible to
     # seek with an offset of <tt>0</tt> and a whence of <tt>IO::SEEK_CUR</tt>.
     # As a result, the _pos_ and _tell_ methods also work as expected.
     #
-    # If _io_ also responds to _rewind_, then the _rewind_ method of this class
-    # can be used to reset the whole stream back to the beginning. Using _seek_
-    # of this class to seek directly to offset <tt>0</tt> using
+    # If _delegate_ also responds to _rewind_, then the _rewind_ method of this
+    # class can be used to reset the whole stream back to the beginning. Using
+    # _seek_ of this class to seek directly to offset <tt>0</tt> using
     # <tt>IO::SEEK_SET</tt> for whence will also work in this case.
     #
     # <b>NOTE:</b> Due to limitations in Ruby's finalization capabilities, the
     # #close method is _not_ automatically called when this object is garbage
     # collected.  Make sure to call #close when finished with this object.
-    def initialize(io, level = Zlib::DEFAULT_COMPRESSION, window_bits = nil, mem_level = nil, strategy = nil)
-      @delegate = io
+    def initialize(delegate, level = Zlib::DEFAULT_COMPRESSION, window_bits = nil, mem_level = nil, strategy = nil)
+      @delegate = delegate
       @level = level
       @window_bits = window_bits
       @mem_level = mem_level
@@ -170,8 +171,8 @@ module Zlib # :nodoc:
     # guaranteed to be called after the block completes.
     #
     # Equivalent to #new if no block is given.
-    def self.open(io, window_bits = nil)
-      zr = new(io, window_bits)
+    def self.open(delegate, window_bits = nil)
+      zr = new(delegate, window_bits)
       return zr unless block_given?
 
       begin
@@ -181,9 +182,9 @@ module Zlib # :nodoc:
       end
     end
 
-    # Creates a new instance of this class.  _io_ must respond to the _read_
-    # method as an IO instance would.  _window_bits_ is passed directly to
-    # Zlib::Inflate.new().  See the documentation of that method for its
+    # Creates a new instance of this class.  _delegate_ must respond to the
+    # _read_ method as an IO instance would.  _window_bits_ is passed directly
+    # to Zlib::Inflate.new().  See the documentation of that method for its
     # meaning.
     #
     # This class has extremely limited seek capabilities.  It is possible to
@@ -196,9 +197,9 @@ module Zlib # :nodoc:
     # definitively how much data is in the buffer, it is best to avoid relying
     # on this behavior.
     #
-    # If _io_ also responds to _rewind_, then the _rewind_ method of this class
-    # can be used to reset the whole stream back to the beginning. Using _seek_
-    # of this class to seek directly to offset <tt>0</tt> using
+    # If _delegate_ also responds to _rewind_, then the _rewind_ method of this
+    # class can be used to reset the whole stream back to the beginning. Using
+    # _seek_ of this class to seek directly to offset <tt>0</tt> using
     # <tt>IO::SEEK_SET</tt> for whence will also work in this case.
     #
     # Any other seeking attempts, will raise Errno::EINVAL exceptions.
@@ -206,8 +207,8 @@ module Zlib # :nodoc:
     # <b>NOTE:</b> Due to limitations in Ruby's finalization capabilities, the
     # #close method is _not_ automatically called when this object is garbage
     # collected.  Make sure to call #close when finished with this object.
-    def initialize(io, window_bits = nil)
-      @delegate = io
+    def initialize(delegate, window_bits = nil)
+      @delegate = delegate
       @delegate_read_size = DEFAULT_DELEGATE_READ_SIZE
       @window_bits = window_bits
       @inflater = Zlib::Inflate.new(@window_bits)
