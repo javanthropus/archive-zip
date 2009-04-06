@@ -33,7 +33,7 @@ module Archive; class Zip; module ExtraField
     end
 
     # Creates a new instance of this class.  _mtime_ and _atime_ should be Time
-    # instances.  _uid_ and _gid_ should be user and group names as strings
+    # instances.  _uid_ and _gid_ should be user and group IDs as Integers
     # respectively.  _data_ should be a string containing either major and minor
     # device numbers consecutively packed as little endian, 4-byte, unsigned
     # integers (see the _V_ directive of Array#pack) or a path to use as a link
