@@ -7,6 +7,14 @@ module Zlib # :nodoc:
     MAX_WBITS = Deflate::MAX_WBITS
   end
 
+  # A deflate strategy which limits match distances to 1, also known as
+  # run-length encoding.
+  RLE = 3
+
+  # A deflate strategy which does not use dynamic Huffman codes, allowing for a
+  # simpler decoder to be used to inflate.
+  FIXED = 4
+
   # Zlib::ZWriter is a writable, IO-like object (includes IO::Like) which wraps
   # other writable, IO-like objects in order to facilitate writing data to those
   # objects using the deflate method of compression.
