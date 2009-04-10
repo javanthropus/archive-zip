@@ -4,8 +4,8 @@ require 'archive/support/zlib'
 
 describe "Zlib::ZReader#rewind" do
   it "can rewind the stream when the delegate responds to rewind" do
-    ZlibSpecs.compressed_file do |cf|
-      Zlib::ZReader.open(cf) do |zr|
+    ZlibSpecs.compressed_data do |cd|
+      Zlib::ZReader.open(cd) do |zr|
         zr.read(4)
         lambda { zr.rewind }.should_not raise_error
         zr.read.should == ZlibSpecs.test_data

@@ -1,43 +1,39 @@
 class ZlibSpecs
-  def self.compressed_file(&b)
-    File.open(File.join(File.dirname(__FILE__), 'compressed_file.bin'), &b)
-  end
-
   def self.compressed_data
     File.open(File.join(File.dirname(__FILE__), 'compressed_file.bin')) do |f|
       block_given? ? yield(f) : f.read
     end
   end
 
-  def self.compressed_data_nocomp(&b)
+  def self.compressed_data_nocomp
     File.open(
       File.join(File.dirname(__FILE__), 'compressed_file_nocomp.bin')
     ) do |f|
-      f.read
+      block_given? ? yield(f) : f.read
     end
   end
 
-  def self.compressed_data_minwin(&b)
+  def self.compressed_data_minwin
     File.open(
       File.join(File.dirname(__FILE__), 'compressed_file_minwin.bin')
     ) do |f|
-      f.read
+      block_given? ? yield(f) : f.read
     end
   end
 
-  def self.compressed_data_minmem(&b)
+  def self.compressed_data_minmem
     File.open(
       File.join(File.dirname(__FILE__), 'compressed_file_minmem.bin')
     ) do |f|
-      f.read
+      block_given? ? yield(f) : f.read
     end
   end
 
-  def self.compressed_data_huffman(&b)
+  def self.compressed_data_huffman
     File.open(
       File.join(File.dirname(__FILE__), 'compressed_file_huffman.bin')
     ) do |f|
-      f.read
+      block_given? ? yield(f) : f.read
     end
   end
 

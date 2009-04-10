@@ -17,8 +17,8 @@ describe "Zlib::ZReader#read" do
   end
 
   it "decompresses compressed data" do
-    ZlibSpecs.compressed_file do |cf|
-      Zlib::ZReader.open(cf) do |zr|
+    ZlibSpecs.compressed_data do |cd|
+      Zlib::ZReader.open(cd) do |zr|
         zr.read.should == ZlibSpecs.test_data
       end
     end
@@ -31,7 +31,7 @@ describe "Zlib::ZReader#read" do
   end
 
   it "raises Zlib::BufError when reading truncated data" do
-    truncated_data = ZlibSpecs.compressed_file { |cf| cf.read(100) }
+    truncated_data = ZlibSpecs.compressed_data { |cd| cd.read(100) }
     Zlib::ZReader.open(StringIO.new(truncated_data)) do |zr|
       lambda { zr.read }.should raise_error(Zlib::BufError)
     end
