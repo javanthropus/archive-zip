@@ -26,7 +26,7 @@ module Zlib # :nodoc:
     # guaranteed to be called after the block completes.
     #
     # Equivalent to #new if no block is given.
-    def self.open(delegate, level = Zlib::DEFAULT_COMPRESSION, window_bits = nil, mem_level = nil, strategy = nil)
+    def self.open(delegate, level = nil, window_bits = nil, mem_level = nil, strategy = nil)
       zw = new(delegate, level, window_bits, mem_level, strategy)
       return zw unless block_given?
 
@@ -40,8 +40,83 @@ module Zlib # :nodoc:
     # Creates a new instance of this class.  _delegate_ must respond to the
     # _write_ method as an instance of IO would.  _level_, _window_bits_,
     # _mem_level_, and _strategy_ are all passed directly to
-    # Zlib::Deflate.new().  See the documentation of that method for their
-    # meanings.
+    # Zlib::Deflate.new().
+    #
+    # <b>
+    # The following descriptions of _level_, _window_bits_, _mem_level_, and
+    # _strategy_ are based upon or pulled largely verbatim from descriptions
+    # found in zlib.h version 1.2.3 with changes made to account for different
+    # parameter names and to improve readability.  Some of the statements
+    # concerning default settings or value ranges may not be accurate depending
+    # on the version of the zlib library used by a given Ruby interpreter.
+    # </b>
+    #
+    # The _level_ parameter must be +nil+, Zlib::DEFAULT_COMPRESSION, or between
+    # <tt>0</tt> and <tt>9</tt>: <tt>1</tt> gives best speed, <tt>9</tt> gives
+    # best compression, <tt>0</tt> gives no compression at all (the input data
+    # is simply copied a block at a time).  Zlib::DEFAULT_COMPRESSION requests a
+    # default compromise between speed and compression (currently equivalent to
+    # level <tt>6</tt>).  If unspecified or +nil+, _level_ defaults to
+    # Zlib::DEFAULT_COMPRESSION.
+    #
+    # The _window_bits_ parameter specifies the size of the history buffer, the
+    # format of the compressed stream, and the kind of checksum returned by the
+    # checksum method.  The size of the history buffer is specified by setting
+    # the value of _window_bits_ in the range of <tt>8</tt>..<tt>15</tt>,
+    # inclusive.  A value of <tt>8</tt> indicates a small window which reduces
+    # memory usage but lowers the compression ratio while a value of <tt>15</tt>
+    # indicates a larger window which increases memory usage but raises the
+    # compression ratio.  Modification of this base value for _window_bits_ as
+    # noted below dictates what kind of compressed stream and checksum will be
+    # produced <b>while preserving the setting for the history buffer</b>.
+    #
+    # If nothing else is done to the base value of _window_bits_, a zlib stream
+    # is to be produced with an appropriate header and trailer.  In this case
+    # the checksum method of this object will be an adler32.
+    #
+    # Adding <tt>16</tt> to the base value of _window_bits_ indicates that a
+    # gzip stream is to be produced with an appropriate header and trailer.  The
+    # gzip header will have no file name, no extra data, no comment, no
+    # modification time (set to zero), no header crc, and the operating system
+    # will be set to <tt>255</tt> (unknown).  In this case the checksum
+    # attribute of this object will be a crc32.
+    #
+    # Finally, negating the base value of _window_bits_ indicates that a raw
+    # zlib stream is to be produced without any header or trailer.  In this case
+    # the checksum method of this object will always return <tt>1</tt>.  This is
+    # for use with other formats that use the deflate compressed data format
+    # such as zip.  Such formats should provide their own check values.
+    #
+    # If unspecified or +nil+, _window_bits_ defaults to <tt>15</tt>.
+    #
+    # The _mem_level_ parameter specifies how much memory should be allocated
+    # for the internal compression state.  A value of <tt>1</tt> uses minimum
+    # memory but is slow and reduces compression ratio; a value of <tt>9</tt>
+    # uses maximum memory for optimal speed.  The default value is <tt>8</tt> if
+    # unspecified or +nil+.
+    #
+    # The _strategy_ parameter is used to tune the compression algorithm.  It
+    # only affects the compression ratio but not the correctness of the
+    # compressed output even if it is not set appropriately.  The default value
+    # is Zlib::DEFAULT_STRATEGY if unspecified or +nil+.
+    #
+    # Use the value Zlib::DEFAULT_STRATEGY for normal data, Zlib::FILTERED for
+    # data produced by a filter (or predictor), Zlib::HUFFMAN_ONLY to force
+    # Huffman encoding only (no string match), Zlib::RLE to limit match
+    # distances to 1 (run-length encoding), or Zlib::FIXED to simplify decoder
+    # requirements.
+    #
+    # The effect of Zlib::FILTERED is to force more Huffman coding and less
+    # string matching; it is somewhat intermediate between
+    # Zlib::DEFAULT_STRATEGY and Zlib::HUFFMAN_ONLY.  Filtered data consists
+    # mostly of small values with a somewhat random distribution.  In this case,
+    # the compression algorithm is tuned to compress them better.
+    #
+    # Zlib::RLE is designed to be almost as fast as Zlib::HUFFMAN_ONLY, but give
+    # better compression for PNG image data.
+    #
+    # Zlib::FIXED prevents the use of dynamic Huffman codes, allowing for a
+    # simpler decoder for special applications.
     #
     # This class has extremely limited seek capabilities.  It is possible to
     # seek with an offset of <tt>0</tt> and a whence of <tt>IO::SEEK_CUR</tt>.
@@ -55,7 +130,7 @@ module Zlib # :nodoc:
     # <b>NOTE:</b> Due to limitations in Ruby's finalization capabilities, the
     # #close method is _not_ automatically called when this object is garbage
     # collected.  Make sure to call #close when finished with this object.
-    def initialize(delegate, level = Zlib::DEFAULT_COMPRESSION, window_bits = nil, mem_level = nil, strategy = nil)
+    def initialize(delegate, level = nil, window_bits = nil, mem_level = nil, strategy = nil)
       @delegate = delegate
       @level = level
       @window_bits = window_bits
@@ -196,8 +271,48 @@ module Zlib # :nodoc:
 
     # Creates a new instance of this class.  _delegate_ must respond to the
     # _read_ method as an IO instance would.  _window_bits_ is passed directly
-    # to Zlib::Inflate.new().  See the documentation of that method for its
-    # meaning.
+    # to Zlib::Inflate.new().
+    #
+    # <b>
+    # The following description of _window_bits_ is based on the description
+    # found in zlib.h version 1.2.3.  Some of the statements concerning default
+    # settings or value ranges may not be accurate depending on the version of
+    # the zlib library used by a given Ruby interpreter.
+    # </b>
+    #
+    # The _window_bits_ parameter specifies the size of the history buffer, the
+    # format of the compressed stream, and the kind of checksum returned by the
+    # checksum method.  The size of the history buffer is specified by setting
+    # the value of _window_bits_ in the range of <tt>8</tt>..<tt>15</tt>,
+    # inclusive.  It must be at least as large as the setting used to create the
+    # stream or a Zlib::DataError will be raised.  Modification of this base
+    # value for _window_bits_ as noted below dictates what kind of compressed
+    # stream is expected and what kind of checksum will be produced <b>while
+    # preserving the setting for the history buffer</b>.
+    #
+    # If nothing else is done to the base value of _window_bits_, a zlib stream
+    # is expected with an appropriate header and trailer.  In this case the
+    # checksum method of this object will be an adler32.
+    #
+    # Adding <tt>16</tt> to the base value of _window_bits_ indicates that a
+    # gzip stream is expected with an appropriate header and trailer.  In this
+    # case the checksum method of this object will be a crc32.
+    #
+    # Adding <tt>32</tt> to the base value of _window_bits_ indicates that an
+    # automatic detection of the stream format should be made based on the
+    # header in the stream.  In this case the checksum method of this object
+    # will depend on whether a zlib or a gzip stream is detected.
+    #
+    # Finally, negating the base value of _window_bits_ indicates that a raw
+    # zlib stream is expected without any header or trailer.  In this case the
+    # checksum method of this object will always return <tt>1</tt>.  This is for
+    # use with other formats that use the deflate compressed data format such as
+    # zip.  Such formats should provide their own check values.
+    #
+    # If unspecified or +nil+, _window_bits_ defaults to <tt>15</tt>.
+    #
+    # In all cases, Zlib::DataError is raised if the wrong stream format is
+    # found <b>when reading</b>.
     #
     # This class has extremely limited seek capabilities.  It is possible to
     # seek with an offset of <tt>0</tt> and a whence of <tt>IO::SEEK_CUR</tt>.
