@@ -3,9 +3,9 @@ class ZlibSpecs
     File.open(File.join(File.dirname(__FILE__), 'compressed_file.bin'), &b)
   end
 
-  def self.compressed_data(&b)
+  def self.compressed_data
     File.open(File.join(File.dirname(__FILE__), 'compressed_file.bin')) do |f|
-      f.read
+      block_given? ? yield(f) : f.read
     end
   end
 
@@ -38,6 +38,22 @@ class ZlibSpecs
       File.join(File.dirname(__FILE__), 'compressed_file_huffman.bin')
     ) do |f|
       f.read
+    end
+  end
+
+  def self.compressed_data_gzip
+    File.open(
+      File.join(File.dirname(__FILE__), 'compressed_file_gzip.bin')
+    ) do |f|
+      block_given? ? yield(f) : f.read
+    end
+  end
+
+  def self.compressed_data_raw
+    File.open(
+      File.join(File.dirname(__FILE__), 'compressed_file_raw.bin')
+    ) do |f|
+      block_given? ? yield(f) : f.read
     end
   end
 

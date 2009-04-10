@@ -40,7 +40,16 @@ module Archive; class Zip; module Codec
       # compression to be applied to the data stream.
       def initialize(io, compression_level)
         super(io, compression_level, -Zlib::MAX_WBITS)
+        @crc32 = 0
       end
+
+      # The CRC32 checksum of the uncompressed data written using this object.
+      #
+      # <b>NOTE:</b> Anything still in the internal write buffer has not been
+      # processed, so calling #flush prior to examining this attribute may be
+      # necessary for an accurate computation.
+      attr_reader :crc32
+      alias :checksum :crc32
 
       # Closes this object so that further write operations will fail.  If
       # _close_delegate_ is +true+, the delegate object used as a data sink will
@@ -58,6 +67,20 @@ module Archive; class Zip; module Codec
       # descriptor may be inaccurate.
       def data_descriptor
         DataDescriptor.new(crc32, compressed_size, uncompressed_size)
+      end
+
+      private
+
+      def unbuffered_seek(offset, whence = IO::SEEK_SET)
+        result = super(offset, whence)
+        @crc32 = 0 if whence == IO::SEEK_SET
+        result
+      end
+
+      def unbuffered_write(string)
+        result = super(string)
+        @crc32 = Zlib.crc32(string, @crc32)
+        result
       end
     end
 
@@ -92,7 +115,16 @@ module Archive; class Zip; module Codec
       # method, this class' _rewind_ method will be enabled.
       def initialize(io)
         super(io, -Zlib::MAX_WBITS)
+        @crc32 = 0
       end
+
+      # The CRC32 checksum of the uncompressed data read using this object.
+      #
+      # <b>NOTE:</b> The contents of the internal read buffer are immediately
+      # processed any time the internal buffer is filled, so this checksum is
+      # only accurate if all data has been read out of this object.
+      attr_reader :crc32
+      alias :checksum :crc32
 
       # Closes this object so that further read operations will fail.  If
       # _close_delegate_ is +true+, the delegate object used as a data source
@@ -109,6 +141,20 @@ module Archive; class Zip; module Codec
       # change the state of this object.
       def data_descriptor
         DataDescriptor.new(crc32, compressed_size, uncompressed_size)
+      end
+
+      private
+
+      def unbuffered_read(length)
+        result = super(length)
+        @crc32 = Zlib.crc32(result, @crc32)
+        result
+      end
+
+      def unbuffered_seek(offset, whence = IO::SEEK_SET)
+        result = super(offset, whence)
+        @crc32 = 0 if whence == IO::SEEK_SET
+        result
       end
     end
 

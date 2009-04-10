@@ -55,15 +55,8 @@ module Zlib # :nodoc:
       @strategy = strategy
       @deflater = Zlib::Deflate.new(@level, @window_bits, @mem_level, @strategy)
       @deflate_buffer = ''
-      @crc32 = 0
+      @checksum = nil
     end
-
-    # The CRC32 checksum of the uncompressed data written using this object.
-    #
-    # <b>NOTE:</b> Anything still in the internal write buffer has not been
-    # processed, so calling #flush prior to examining this attribute may be
-    # necessary for an accurate computation.
-    attr_reader :crc32
 
     protected
 
@@ -71,6 +64,18 @@ module Zlib # :nodoc:
     attr_reader :delegate
 
     public
+
+    # Returns the checksum computed over the data written to this stream so far.
+    #
+    # <b>NOTE:</b> Refer to the documentation of #new concerning _window_bits_
+    # to learn what kind of checksum will be returned.
+    #
+    # <b>NOTE:</b> Anything still in the internal write buffer has not been
+    # processed, so calling #flush prior to calling this method may be necessary
+    # for an accurate checksum.
+    def checksum
+      @deflater.closed? ? @checksum : @deflater.adler
+    end
 
     # Closes the writer by finishing the compressed data and flushing it to the
     # delegate.
@@ -86,6 +91,7 @@ module Zlib # :nodoc:
       rescue Errno::EAGAIN, Errno::EINTR
         retry if write_ready?
       end
+      @checksum = @deflater.adler
       @deflater.close
       super()
       nil
@@ -133,7 +139,6 @@ module Zlib # :nodoc:
         @deflater = Zlib::Deflate.new(
           @level, @window_bits, @mem_level, @strategy
         )
-        @crc32 = 0
         @deflate_buffer = ''
         0
       when IO::SEEK_CUR
@@ -151,7 +156,6 @@ module Zlib # :nodoc:
       # At this point we can deflate the given string into a new buffer and
       # behave as if it was written.
       @deflate_buffer = @deflater.deflate(string)
-      @crc32 = Zlib.crc32(string, @crc32)
       string.length
     end
   end
@@ -213,15 +217,8 @@ module Zlib # :nodoc:
       @window_bits = window_bits
       @inflater = Zlib::Inflate.new(@window_bits)
       @inflate_buffer = ''
-      @crc32 = 0
+      @checksum = nil
     end
-
-    # The CRC32 checksum of the uncompressed data read using this object.
-    #
-    # <b>NOTE:</b> The contents of the internal read buffer are immediately
-    # processed any time the buffer is filled, so this count is only accurate if
-    # all data has been read out of this object.
-    attr_reader :crc32
 
     # The number of bytes to read from the delegate object each time the
     # internal read buffer is filled.
@@ -234,11 +231,24 @@ module Zlib # :nodoc:
 
     public
 
+    # Returns the checksum computed over the data read from this stream.
+    #
+    # <b>NOTE:</b> Refer to the documentation of #new concerning _window_bits_
+    # to learn what kind of checksum will be returned.
+    #
+    # <b>NOTE:</b> The contents of the internal read buffer are immediately
+    # processed any time the internal buffer is filled, so this checksum is only
+    # accurate if all data has been read out of this object.
+    def checksum
+      @inflater.closed? ? @checksum : @inflater.adler
+    end
+
     # Closes the reader.
     #
     # Raises IOError if called more than once.
     def close
       super()
+      @checksum = @inflater.adler
       @inflater.close
       nil
     end
@@ -268,9 +278,7 @@ module Zlib # :nodoc:
       rescue Errno::EINTR, Errno::EAGAIN
         raise if @inflate_buffer.empty?
       end
-      buffer = @inflate_buffer.slice!(0, length)
-      @crc32 = Zlib.crc32(buffer, @crc32)
-      buffer
+      @inflate_buffer.slice!(0, length)
     end
 
     # Allows resetting this object and the delegate object back to the beginning
@@ -292,7 +300,6 @@ module Zlib # :nodoc:
         delegate.rewind
         @inflater.close
         @inflater = Zlib::Inflate.new(@window_bits)
-        @crc32 = 0
         @inflate_buffer = ''
         0
       when IO::SEEK_CUR
