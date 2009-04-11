@@ -139,6 +139,8 @@ module Zlib # :nodoc:
       @deflater = Zlib::Deflate.new(@level, @window_bits, @mem_level, @strategy)
       @deflate_buffer = ''
       @checksum = nil
+      @compressed_size = nil
+      @uncompressed_size = nil
     end
 
     protected
@@ -175,6 +177,8 @@ module Zlib # :nodoc:
         retry if write_ready?
       end
       @checksum = @deflater.adler
+      @compressed_size = @deflater.total_out
+      @uncompressed_size = @deflater.total_in
       @deflater.close
       super()
       nil
@@ -182,20 +186,21 @@ module Zlib # :nodoc:
 
     # Returns the number of bytes of compressed data produced so far.
     #
-    # <b>NOTE:</b> Anything still in the internal write buffer has not been
-    # processed, so calling #flush prior to calling this method may be necessary
-    # for an accurate count.
+    # <b>NOTE:</b> This value is only updated when both the internal write
+    # buffer is flushed and there is enough data to produce a compressed block.
+    # It does not necessarily reflect the amount of data written to the
+    # delegate until this stream is closed however.  Until then the only
+    # guarantee is that the value will be greater than or equal to <tt>0</tt>.
     def compressed_size
-      @deflater.total_out
+      @deflater.closed? ? @compressed_size : @deflater.total_out
     end
 
     # Returns the number of bytes sent to be compressed so far.
     #
-    # <b>NOTE:</b> Anything still in the internal write buffer has not been
-    # processed, so calling #flush prior to calling this method may be necessary
-    # for an accurate count.
+    # <b>NOTE:</b> This value is only updated when the internal write buffer is
+    # flushed.
     def uncompressed_size
-      @deflater.total_in
+      @deflater.closed? ? @uncompressed_size : @deflater.total_in
     end
 
     private
@@ -341,6 +346,8 @@ module Zlib # :nodoc:
       @inflater = Zlib::Inflate.new(@window_bits)
       @inflate_buffer = ''
       @checksum = nil
+      @compressed_size = nil
+      @uncompressed_size = nil
     end
 
     # The number of bytes to read from the delegate object each time the
@@ -372,18 +379,26 @@ module Zlib # :nodoc:
     def close
       super()
       @checksum = @inflater.adler
+      @compressed_size = @inflater.total_in
+      @uncompressed_size = @inflater.total_out
       @inflater.close
       nil
     end
 
-    # Returns the number of bytes sent to be decompressed so far.
+    # Returns the number of bytes sent to be compressed so far.
+    #
+    # <b>NOTE:</b> This value is updated whenever the internal read buffer needs
+    # to be filled, not when data is read out of this stream.
     def compressed_size
-      @inflater.total_in
+      @inflater.closed? ? @compressed_size : @inflater.total_in
     end
 
     # Returns the number of bytes of decompressed data produced so far.
+    #
+    # <b>NOTE:</b> This value is updated whenever the internal read buffer needs
+    # to be filled, not when data is read out of this stream.
     def uncompressed_size
-      @inflater.total_out
+      @inflater.closed? ? @uncompressed_size : @inflater.total_out
     end
 
     private
