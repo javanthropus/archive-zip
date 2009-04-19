@@ -5,7 +5,9 @@ require 'stringio'
 
 describe "Zlib::ZWriter.open" do
   it "returns a new instance when run without a block" do
-    Zlib::ZWriter.open(StringIO.new).class.should == Zlib::ZWriter
+    zw = Zlib::ZWriter.open(StringIO.new)
+    zw.class.should == Zlib::ZWriter
+    zw.close
   end
 
   it "executes a block with a new instance as an argument" do

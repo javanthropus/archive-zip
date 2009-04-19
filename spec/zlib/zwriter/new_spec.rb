@@ -5,7 +5,9 @@ require 'stringio'
 
 describe "Zlib::ZWriter.new" do
   it "returns a new instance" do
-    Zlib::ZWriter.new(StringIO.new).class.should == Zlib::ZWriter
+    zw = Zlib::ZWriter.new(StringIO.new)
+    zw.class.should == Zlib::ZWriter
+    zw.close
   end
 
   it "provides default settings for level, window_bits, mem_level, and strategy" do
