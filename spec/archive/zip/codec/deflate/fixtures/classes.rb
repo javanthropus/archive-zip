@@ -7,9 +7,9 @@ class DeflateSpecs
     end
   end
 
-  def self.compressed_data_raw
+  def self.compressed_data
     File.open(
-      File.join(File.dirname(__FILE__), 'compressed_file_raw.bin')
+      File.join(File.dirname(__FILE__), 'compressed_file.bin')
     ) do |f|
       block_given? ? yield(f) : f.read
     end
