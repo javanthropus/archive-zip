@@ -725,9 +725,19 @@ module Archive; class Zip
         else
           ''
         end
-      end.join +
-        ExtraField::ExtendedTimestamp.new(mtime, atime, nil).dump +
-        ExtraField::Unix.new(mtime, atime, uid, gid).dump
+      end.join
+
+      # Add fields for time data if available.
+      unless mtime.nil? || atime.nil? then
+        @extra_field_data +=
+          ExtraField::ExtendedTimestamp.new(mtime, atime, nil).dump
+        # Add fields for user and group ownerships if available.
+        unless uid.nil? || gid.nil? then
+          @extra_field_data += ExtraField::Unix.new(mtime, atime, uid, gid).dump
+        end
+      end
+
+      @extra_field_data
     end
 
     def internal_file_attributes
