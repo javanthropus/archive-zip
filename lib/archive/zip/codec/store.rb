@@ -58,12 +58,12 @@ module Archive; class Zip; module Codec
         nil
       end
 
-      # Returns an instance of Archive::Zip::Entry::DataDescriptor with
-      # information regarding the data which has passed through this object to
-      # the delegate object.  The close or flush methods should be called before
-      # using this method in order to ensure that any possibly buffered data is
-      # flushed to the delegate object; otherwise, the contents of the data
-      # descriptor may be inaccurate.
+      # Returns an instance of Archive::Zip::DataDescriptor with information
+      # regarding the data which has passed through this object to the delegate
+      # object.  The close or flush methods should be called before using this
+      # method in order to ensure that any possibly buffered data is flushed to
+      # the delegate object; otherwise, the contents of the data descriptor may
+      # be inaccurate.
       def data_descriptor
         DataDescriptor.new(
           @crc32,
@@ -138,11 +138,11 @@ module Archive; class Zip; module Codec
         nil
       end
 
-      # Returns an instance of Archive::Zip::Entry::DataDescriptor with
-      # information regarding the data which has passed through this object
-      # from the delegate object.  It is recommended to call the close method
-      # before calling this in order to ensure that no further read operations
-      # change the state of this object.
+      # Returns an instance of Archive::Zip::DataDescriptor with information
+      # regarding the data which has passed through this object from the
+      # delegate object.  It is recommended to call the close method before
+      # calling this in order to ensure that no further read operations change
+      # the state of this object.
       def data_descriptor
         DataDescriptor.new(
           @crc32,

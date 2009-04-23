@@ -472,10 +472,10 @@ module Archive; class Zip
     attr_accessor :mode
     # The comment associated with this entry.
     attr_accessor :comment
-    # An Archive::Zip::Entry::DataDescriptor instance which should contain the
-    # expected CRC32 checksum, compressed size, and uncompressed size for the
-    # file data.  When not +nil+, this is used by #extract to confirm that the
-    # data extraction was successful.
+    # An Archive::Zip::DataDescriptor instance which should contain the expected
+    # CRC32 checksum, compressed size, and uncompressed size for the file data.
+    # When not +nil+, this is used by #extract to confirm that the data
+    # extraction was successful.
     attr_accessor :expected_data_descriptor
     # The selected compression codec.
     attr_accessor :compression_codec

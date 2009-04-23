@@ -1,7 +1,7 @@
 module Archive; class Zip
-  # Archive::Zip::Entry::DataDescriptor is a convenience class which bundles
-  # imporant information concerning the compressed data in a ZIP archive entry
-  # and allows easy comparisons between instances of itself.
+  # Archive::Zip::DataDescriptor is a convenience class which bundles important
+  # information concerning the compressed data in a ZIP archive entry and allows
+  # easy comparisons between instances of itself.
   class DataDescriptor
     # Create a new instance of this class where <em>crc32</em>,
     # _compressed_size_, and _uncompressed_size_ are all integers representing a
@@ -41,7 +41,7 @@ module Archive; class Zip
     end
 
     # Writes the data wrapped in this object to _io_ which must be a writable,
-    # IO-like object prividing a _write_ method.  Returns the number of bytes
+    # IO-like object providing a _write_ method.  Returns the number of bytes
     # written.
     def dump(io)
       io.write(
