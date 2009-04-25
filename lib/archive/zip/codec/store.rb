@@ -1,4 +1,5 @@
 require 'archive/support/io-like'
+require 'archive/support/zlib'
 require 'archive/zip/codec'
 require 'archive/zip/data_descriptor'
 
