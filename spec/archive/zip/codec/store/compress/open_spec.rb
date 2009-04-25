@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
-require 'archive/zip/codec/deflate'
+require 'archive/zip/codec/store'
 require 'stringio'
 
 describe "Archive::Zip::Codec::Store::Compress.open" do
