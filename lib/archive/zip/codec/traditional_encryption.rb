@@ -108,7 +108,16 @@ module Archive; class Zip; module Codec
       # The _flush_size_ attribute is set to <tt>0</tt> by default under the
       # assumption that _io_ is already buffered.
       def initialize(io, password, mtime)
+        # Keep track of the total number of bytes written.
+        # Set this here so that the call to #initialize_keys caused by the call
+        # to super below does not cause errors in #unbuffered_write due to this
+        # attribute being uninitialized.
+        @total_bytes_in = 0
+
         super(io, password, mtime)
+
+        # Reset the total bytes written in order to disregard the header.
+        @total_bytes_in = 0
 
         # Assume that the delegate IO object is already buffered.
         self.flush_size = 0
@@ -143,6 +152,30 @@ module Archive; class Zip; module Codec
         nil
       end
 
+      # Allows resetting this object and the delegate object back to the
+      # beginning of the stream or reporting the current position in the stream.
+      #
+      # Raises Errno::EINVAL unless _offset_ is <tt>0</tt> and _whence_ is
+      # either IO::SEEK_SET or IO::SEEK_CUR.  Raises Errno::EINVAL if _whence_
+      # is IO::SEEK_SEK and the delegate object does not respond to the _rewind_
+      # method.
+      def unbuffered_seek(offset, whence = IO::SEEK_SET)
+        unless offset == 0 &&
+               ((whence == IO::SEEK_SET && @io.respond_to?(:rewind)) ||
+                whence == IO::SEEK_CUR) then
+          raise Errno::EINVAL
+        end
+
+        case whence
+        when IO::SEEK_SET
+          io.rewind
+          initialize_keys
+          @total_bytes_in = 0
+        when IO::SEEK_CUR
+          @total_bytes_in
+        end
+      end
+
       # Encrypts and writes _string_ to the delegate IO object.  Returns the
       # number of bytes of _string_ written.  If _string_ is not a String, it is
       # converted into one using its _to_s_ method.
@@ -155,6 +188,7 @@ module Archive; class Zip; module Codec
           bytes_written += 1
           update_keys(byte.chr)
         end
+        @total_bytes_in += bytes_written
         bytes_written
       end
     end
@@ -187,16 +221,41 @@ module Archive; class Zip; module Codec
       end
 
       # Creates a new instance of this class using _io_ as a data source.  _io_
-      # must be readable and provide a read method as IO does or errors will be
-      # raised when performing read operations.  If _io_ provides a rewind
-      # method, this class' rewind method will be enabled.  _password_ should be
-      # the encryption key.  _mtime_ must be the last modified time of the entry
-      # to be encrypted/decrypted.
+      # must be readable and provide a _read_ method as an IO instance would or
+      # errors will be raised when performing read operations.  _password_
+      # should be the encryption key.  _mtime_ must be the last modified time of
+      # the entry to be encrypted/decrypted.
+      #
+      # This class has extremely limited seek capabilities.  It is possible to
+      # seek with an offset of <tt>0</tt> and a whence of <tt>IO::SEEK_CUR</tt>.
+      # As a result, the _pos_ and _tell_ methods also work as expected.
+      #
+      # Due to certain optimizations within IO::Like#seek and if there is data
+      # in the read buffer, the _seek_ method can be used to seek forward from
+      # the current stream position up to the end of the buffer.  Unless it is
+      # known definitively how much data is in the buffer, it is best to avoid
+      # relying on this behavior.
+      #
+      # If _io_ also responds to _rewind_, then the _rewind_ method of this
+      # class can be used to reset the whole stream back to the beginning. Using
+      # _seek_ of this class to seek directly to offset <tt>0</tt> using
+      # <tt>IO::SEEK_SET</tt> for whence will also work in this case.
+      #
+      # Any other seeking attempts, will raise Errno::EINVAL exceptions.
       #
       # The _fill_size_ attribute is set to <tt>0</tt> by default under the
       # assumption that _io_ is already buffered.
       def initialize(io, password, mtime)
+        # Keep track of the total number of bytes read.
+        # Set this here so that the call to #initialize_keys caused by the call
+        # to super below does not cause errors in #unbuffered_read due to this
+        # attribute being uninitialized.
+        @total_bytes_out = 0
+
         super(io, password, mtime)
+
+        # Reset the total bytes read in order to disregard the header.
+        @total_bytes_out = 0
 
         # Assume that the delegate IO object is already buffered.
         self.fill_size = 0
@@ -230,6 +289,7 @@ module Archive; class Zip; module Codec
       def unbuffered_read(length)
         buffer = io.read(length)
         raise EOFError, 'end of file reached' if buffer.nil?
+        @total_bytes_out += buffer.length
 
         (0 ... buffer.size).each do |i|
           buffer[i] = (buffer[i] ^ decrypt_byte)
@@ -239,19 +299,27 @@ module Archive; class Zip; module Codec
       end
 
       # Allows resetting this object and the delegate object back to the
-      # beginning of the stream.  _offset_ must be <tt>0</tt> and _whence_ must
-      # be IO::SEEK_SET or an error will be raised.  The delegate object must
-      # respond to the _rewind_ method or an error will be raised.
+      # beginning of the stream or reporting the current position in the stream.
+      #
+      # Raises Errno::EINVAL unless _offset_ is <tt>0</tt> and _whence_ is
+      # either IO::SEEK_SET or IO::SEEK_CUR.  Raises Errno::EINVAL if _whence_
+      # is IO::SEEK_SEK and the delegate object does not respond to the _rewind_
+      # method.
       def unbuffered_seek(offset, whence = IO::SEEK_SET)
-        unless offset == 0 && whence == IO::SEEK_SET then
-          raise Errno::EINVAL, 'Invalid argument'
+        unless offset == 0 &&
+               ((whence == IO::SEEK_SET && @io.respond_to?(:rewind)) ||
+                whence == IO::SEEK_CUR) then
+          raise Errno::EINVAL
         end
-        unless io.respond_to?(:rewind) then
-          raise Errno::ESPIPE, 'Illegal seek'
+
+        case whence
+        when IO::SEEK_SET
+          io.rewind
+          initialize_keys
+          @total_bytes_out = 0
+        when IO::SEEK_CUR
+          @total_bytes_out
         end
-        io.rewind
-        initialize_keys
-        0
       end
     end
 
