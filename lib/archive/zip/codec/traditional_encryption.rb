@@ -114,6 +114,10 @@ module Archive; class Zip; module Codec
         # attribute being uninitialized.
         @total_bytes_in = 0
 
+        # This buffer is used to hold the encrypted version of the string most
+        # recently sent to #unbuffered_write.
+        @encrypt_buffer = ''
+
         super(io, password, mtime)
 
         # Reset the total bytes written in order to disregard the header.
@@ -123,12 +127,24 @@ module Archive; class Zip; module Codec
         self.flush_size = 0
       end
 
-      # Closes this object so that further write operations will fail.  If
-      # _close_delegate_ is +true+, the delegate object used as a data sink will
-      # also be closed using its close method.
+      # Closes the stream after flushing the encryption buffer to the delegate.
+      # If _close_delegate_ is +true+, the delegate object used as a data sink
+      # will also be closed using its close method.
+      #
+      # Raises IOError if called more than once.
       def close(close_delegate = true)
+        flush()
+        begin
+          until @encrypt_buffer.empty? do
+            @encrypt_buffer.slice!(0, io.write(@encrypt_buffer))
+          end
+        rescue Errno::EAGAIN, Errno::EINTR
+          retry if write_ready?
+        end
+
         super()
         io.close if close_delegate
+        nil
       end
 
       private
@@ -140,15 +156,26 @@ module Archive; class Zip; module Codec
         super
 
         # Create and encrypt a 12 byte header to protect the encrypted file data
-        # from attack.  The first 10 bytes are random, and the lat 2 bytes are
+        # from attack.  The first 10 bytes are random, and the last 2 bytes are
         # the low order word of the last modified time of the entry in DOS
         # format.
+        header = ''
         10.times do
-          unbuffered_write(rand(256).chr)
+          header << rand(256).chr
         end
         time = mtime.to_dos_time.to_i
-        unbuffered_write((time & 0xff).chr)
-        unbuffered_write(((time >> 8) & 0xff).chr)
+        header << (time & 0xff).chr
+        header << ((time >> 8) & 0xff).chr
+        # Take care to ensure that all bytes in the header are written.
+        while header.size > 0 do
+          begin
+            bytes_written = unbuffered_write(header)
+            header.slice!(0, bytes_written)
+          rescue Errno::EAGAIN, Errno::EINTR
+            sleep(1)
+          end
+        end
+
         nil
       end
 
@@ -169,6 +196,7 @@ module Archive; class Zip; module Codec
         case whence
         when IO::SEEK_SET
           io.rewind
+          @encrypt_buffer = ''
           initialize_keys
           @total_bytes_in = 0
         when IO::SEEK_CUR
@@ -177,19 +205,23 @@ module Archive; class Zip; module Codec
       end
 
       # Encrypts and writes _string_ to the delegate IO object.  Returns the
-      # number of bytes of _string_ written.  If _string_ is not a String, it is
-      # converted into one using its _to_s_ method.
+      # number of bytes of _string_ written.
       def unbuffered_write(string)
-        string = string.to_s
-        bytes_written = 0
+        # First try to write out the contents of the encrypt buffer because if
+        # that raises a failure we can let that pass up the call stack without
+        # having polluted the encryption state.
+        until @encrypt_buffer.empty? do
+          @encrypt_buffer.slice!(0, io.write(@encrypt_buffer))
+        end
+        # At this point we can encrypt the given string into a new buffer and
+        # behave as if it was written.
         string.each_byte do |byte|
           temp = decrypt_byte
-          break unless io.write((byte ^ temp).chr) > 0
-          bytes_written += 1
+          @encrypt_buffer << (byte ^ temp).chr
           update_keys(byte.chr)
         end
-        @total_bytes_in += bytes_written
-        bytes_written
+        @total_bytes_in += string.length
+        string.length
       end
     end
 
@@ -277,8 +309,17 @@ module Archive; class Zip; module Codec
       def initialize_keys
         super
 
-        # Decrypt the 12 byte header.
-        unbuffered_read(12)
+        # Load the 12 byte header taking care to ensure that all bytes are read.
+        bytes_needed = 12
+        while bytes_needed > 0 do
+          begin
+            bytes_read = unbuffered_read(bytes_needed)
+            bytes_needed -= bytes_read.size
+          rescue Errno::EAGAIN, Errno::EINTR
+            sleep(1)
+          end
+        end
+
         nil
       end
 
