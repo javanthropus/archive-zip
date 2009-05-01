@@ -106,7 +106,13 @@ module Archive # :nodoc:
     end
 
     # A comment string for the ZIP archive.
-    attr_accessor :comment
+    attr_reader :comment
+
+    # Sets the comment string for the archive and flags the archive as modified.
+    def comment=(comment)
+      @dirty = true
+      @comment = comment
+    end
 
     # Close the archive.  It is at this point that any changes made to the
     # archive will be persisted to an output stream.
