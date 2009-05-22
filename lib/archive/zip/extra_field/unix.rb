@@ -17,19 +17,22 @@ module Archive; class Zip; module ExtraField
     # Register this extra field for use.
     EXTRA_FIELDS[ID] = self
 
-    # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for extra field objects.
-    #
-    # Parses _data_ which is expected to be a String formatted according to the
-    # official ZIP specification.
-    #
-    # Raises Archive::Zip::ExtraFieldError if _data_ contains invalid data.
-    def self.parse(data)
-      unless data.length >= 12 then
-        raise Zip::ExtraFieldError, "invalid size for Unix data: #{data.size}"
+    class << self
+      # This method signature is part of the interface contract expected by
+      # Archive::Zip::Entry for extra field objects.
+      #
+      # Parses _data_ which is expected to be a String formatted according to
+      # the official ZIP specification.
+      #
+      # Raises Archive::Zip::ExtraFieldError if _data_ contains invalid data.
+      def parse_central(data)
+        unless data.length >= 12 then
+          raise Zip::ExtraFieldError, "invalid size for Unix data: #{data.size}"
+        end
+        atime, mtime, uid, gid, rest = data.unpack('VVvva')
+        new(Time.at(mtime), Time.at(atime), uid, gid, rest)
       end
-      atime, mtime, uid, gid, rest = data.unpack('VVvva')
-      new(Time.at(mtime), Time.at(atime), uid, gid, rest)
+      alias :parse_local :parse_central
     end
 
     # Creates a new instance of this class.  _mtime_ and _atime_ should be Time
@@ -39,6 +42,7 @@ module Archive; class Zip; module ExtraField
     # integers (see the _V_ directive of Array#pack) or a path to use as a link
     # target.
     def initialize(mtime, atime, uid, gid, data = '')
+      @header_id = ID
       @mtime = mtime
       @atime = atime
       @uid = uid
@@ -46,6 +50,8 @@ module Archive; class Zip; module ExtraField
       @data = data
     end
 
+    # Returns the header ID for this ExtraField.
+    attr_reader :header_id
     # A Time object representing the last accessed time for an entry.
     attr_accessor :atime
     # A Time object representing the last modified time for an entry.
@@ -85,9 +91,38 @@ module Archive; class Zip; module ExtraField
     # This method signature is part of the interface contract expected by
     # Archive::Zip::Entry for extra field objects.
     #
-    # Returns a String suitable to writing to a ZIP archive file which contains
-    # the data for this object.
-    def dump
+    # Merges the attributes of _other_ into this object and returns +self+.
+    #
+    # Raises ArgumentError if _other_ is not the same class as this object.
+    def merge(other)
+      if self.class != other.class then
+        raise ArgumentError, "#{self.class} is not the same as #{other.class}"
+      end
+
+      @atime = other.atime
+      @mtime = other.mtime
+      @uid = other.uid
+      @gid = other.gid
+      @data = other.data
+
+      self
+    end
+
+    # This method signature is part of the interface contract expected by
+    # Archive::Zip::Entry for extra field objects.
+    #
+    # Returns a String suitable to writing to a central file record in a ZIP
+    # archive file which contains the data for this object.
+    def dump_central
+      ''
+    end
+
+    # This method signature is part of the interface contract expected by
+    # Archive::Zip::Entry for extra field objects.
+    #
+    # Returns a String suitable to writing to a local file record in a ZIP
+    # archive file which contains the data for this object.
+    def dump_local
       [
         ID,
         12 + @data.size,
@@ -97,5 +132,10 @@ module Archive; class Zip; module ExtraField
         @gid
       ].pack('vvVVvv') + @data
     end
+    alias :dump_local :dump_central
+
+    protected
+
+    attr_reader :data
   end
 end; end; end

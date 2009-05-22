@@ -322,7 +322,9 @@ module Archive; class Zip
       cfr.local_header_position = io.readbytes(42).unpack('vvvvVVVVvvvvvVV')
 
       cfr.zip_path = io.readbytes(file_name_length)
-      cfr.extra_fields = parse_extra_fields(io.readbytes(extra_fields_length))
+      cfr.extra_fields = parse_central_extra_fields(
+        io.readbytes(extra_fields_length)
+      )
       cfr.comment = io.readbytes(comment_length)
 
       # Convert from MSDOS time to Unix time.
@@ -357,7 +359,9 @@ module Archive; class Zip
       extra_fields_length = io.readbytes(26).unpack('vvvVVVVvv')
 
       lfr.zip_path = io.readbytes(file_name_length)
-      lfr.extra_fields = parse_extra_fields(io.readbytes(extra_fields_length))
+      lfr.extra_fields = parse_local_extra_fields(
+        io.readbytes(extra_fields_length)
+      )
 
       # Convert from MSDOS time to Unix time.
       lfr.mtime = DOSTime.new(dos_mtime).to_time
@@ -387,17 +391,33 @@ module Archive; class Zip
       raise Zip::EntryError, 'unexpected end of file'
     end
 
-    # Parses the extra fields for local and central file records and returns an
-    # array of extra field objects.  _bytes_ must be a String containing all of
-    # the extra field data to be parsed.
-    def self.parse_extra_fields(bytes)
+    # Parses the extra fields for central file records and returns an array of
+    # extra field objects.  _bytes_ must be a String containing all of the extra
+    # field data to be parsed.
+    def self.parse_central_extra_fields(bytes)
       StringIO.open(bytes) do |io|
         extra_fields = []
         while ! io.eof? do
           header_id, data_size = io.readbytes(4).unpack('vv')
           data = io.readbytes(data_size)
 
-          extra_fields << ExtraField.parse(header_id, data)
+          extra_fields << ExtraField.parse_central(header_id, data)
+        end
+        extra_fields
+      end
+    end
+
+    # Parses the extra fields for local file records and returns an array of
+    # extra field objects.  _bytes_ must be a String containing all of the extra
+    # field data to be parsed.
+    def self.parse_local_extra_fields(bytes)
+      StringIO.open(bytes) do |io|
+        extra_fields = []
+        while ! io.eof? do
+          header_id, data_size = io.readbytes(4).unpack('vv')
+          data = io.readbytes(data_size)
+
+          extra_fields << ExtraField.parse_local(header_id, data)
         end
         extra_fields
       end
@@ -519,24 +539,37 @@ module Archive; class Zip
       false
     end
 
-    # Adds _extra_field_ as an extra field specification to this entry.  If
-    # _extra_field_ is an instance of
+    # Adds _extra_field_ as an extra field specification to *both* the central
+    # file record and the local file record of this entry.
+    #
+    # If _extra_field_ is an instance of
     # Archive::Zip::Entry::ExtraField::ExtendedTimestamp, the values of that
     # field are used to set mtime and atime for this entry.  If _extra_field_ is
     # an instance of Archive::Zip::Entry::ExtraField::Unix, the values of that
     # field are used to set mtime, atime, uid, and gid for this entry.
     def add_extra_field(extra_field)
-      @extra_field_data = nil
-      @extra_fields << extra_field
+      # Try to find an extra field with the same header ID already in the list
+      # and merge the new one with that if one exists; otherwise, add the new
+      # one to the list.
+      existing_extra_field = @extra_fields.find do |ef|
+        ef.header_id == extra_field.header_id
+      end
+      if existing_extra_field.nil? then
+        @extra_fields << extra_field
+      else
+        extra_field = existing_extra_field.merge(extra_field)
+      end
 
+      # Set some attributes of this entry based on the settings in select types
+      # of extra fields.
       if extra_field.kind_of?(ExtraField::ExtendedTimestamp) then
-        self.mtime = extra_field.mtime
-        self.atime = extra_field.atime
+        self.mtime = extra_field.mtime unless extra_field.mtime.nil?
+        self.atime = extra_field.atime unless extra_field.atime.nil?
       elsif extra_field.kind_of?(ExtraField::Unix) then
-        self.mtime = extra_field.mtime
-        self.atime = extra_field.atime
-        self.uid   = extra_field.uid
-        self.gid   = extra_field.gid
+        self.mtime = extra_field.mtime unless extra_field.mtime.nil?
+        self.atime = extra_field.atime unless extra_field.atime.nil?
+        self.uid   = extra_field.uid unless extra_field.uid.nil?
+        self.gid   = extra_field.gid unless extra_field.uid.nil?
       end
       self
     end
@@ -578,6 +611,7 @@ module Archive; class Zip
       end
 
       bytes_written += io.write(LFH_SIGNATURE)
+      extra_field_data = local_extra_field_data
       bytes_written += io.write(
         [
           version_needed_to_extract,
@@ -691,6 +725,7 @@ module Archive; class Zip
         ].pack('vvvvV')
       )
       bytes_written += @data_descriptor.dump(io)
+      extra_field_data = central_extra_field_data
       bytes_written += io.write(
         [
           zip_path.length,
@@ -715,29 +750,31 @@ module Archive; class Zip
       0x0314
     end
 
-    def extra_field_data
-      return @extra_field_data unless @extra_field_data.nil?
-
-      @extra_field_data = @extra_fields.collect do |extra_field|
-        unless extra_field.kind_of?(ExtraField::ExtendedTimestamp) ||
-               extra_field.kind_of?(ExtraField::Unix) then
-          extra_field.dump
-        else
-          ''
-        end
+    def central_extra_field_data
+      @central_extra_field_data = @extra_fields.collect do |extra_field|
+        extra_field.dump_central
       end.join
+    end
 
+    def dummy
       # Add fields for time data if available.
-      unless mtime.nil? || atime.nil? then
-        @extra_field_data +=
-          ExtraField::ExtendedTimestamp.new(mtime, atime, nil).dump
-        # Add fields for user and group ownerships if available.
-        unless uid.nil? || gid.nil? then
-          @extra_field_data += ExtraField::Unix.new(mtime, atime, uid, gid).dump
-        end
+      unless mtime.nil? && atime.nil? then
+        @central_extra_field_data +=
+          ExtraField::ExtendedTimestamp.new(mtime, atime, nil).dump_central
       end
 
-      @extra_field_data
+      # Add fields for user and group ownerships if available.
+      unless uid.nil? || gid.nil? || mtime.nil? || atime.nil? then
+        @central_extra_field_data += ExtraField::Unix.new(
+          mtime, atime, uid, gid
+        ).dump_central
+      end
+    end
+
+    def local_extra_field_data
+      @local_extra_field_data = @extra_fields.collect do |extra_field|
+        extra_field.dump_local
+      end.join
     end
 
     def internal_file_attributes
