@@ -44,20 +44,53 @@ module Archive # :nodoc:
     DD_SIGNATURE       = "PK\x7\x8" # 0x08074b50
 
 
-    # A convenience method which opens a new or existing archive located in the
-    # path indicated by _archive_path_, adds and updates entries based on the
-    # paths given in _paths_, and then saves and closes the archive.  See the
-    # instance method #archive for more information about _paths_ and _options_.
-    def self.archive(archive_path, paths, options = {})
-      open(archive_path) { |z| z.archive(paths, options) }
+    # Creates or possibly updates an archive using _paths_ for new contents.
+    #
+    # If _archive_ is a String, it is treated as a file path which will receive
+    # the archive contents.  If the file already exists, it is assumed to be an
+    # archive and will be updated "in place".  Otherwise, a new archive
+    # is created.  The archive will be closed once written.
+    #
+    # If _archive_ has any other kind of value, it is treated as a writable
+    # IO-like object which will be left open after the completion of this
+    # method.
+    #
+    # See the instance method #archive for more information about _paths_ and
+    # _options_.
+    def self.archive(archive, paths, options = {})
+      if archive.kind_of?(String) && File.exist?(archive) then
+        # Update the archive "in place".
+        tmp_archive_path = nil
+        File.open(archive) do |archive_in|
+          Tempfile.open(*File.split(archive_in.path).reverse) do |archive_out|
+            # Save off the path so that the temporary file can be renamed to the
+            # archive file later.
+            tmp_archive_path = archive_out.path
+            # Ensure the file is in binary mode for Windows.
+            archive_out.binmode
+            # Update the archive.
+            open(archive_in, archive_out) { |z| z.archive(paths, options) }
+          end
+        end
+        # Set more reasonable permissions than those set by Tempfile.
+        File.chmod(0666 & ~File.umask, tmp_archive_path)
+        # Replace the input archive with the output archive.
+        File.rename(tmp_archive_path, archive)
+      else
+        open(nil, archive) { |z| z.archive(paths, options) }
+      end
     end
 
-    # A convenience method which opens an archive located in the path indicated
-    # by _archive_path_, extracts the entries to the path indicated by
-    # _destination_, and then closes the archive.  See the instance method
-    # #extract for more information about _destination_ and _options_.
-    def self.extract(archive_path, destination, options = {})
-      open(archive_path) { |z| z.extract(destination, options) }
+    # Extracts the entries from an archive to _destination_.
+    #
+    # If _archive_ is a String, it is treated as a file path pointing to an
+    # existing archive file.  Otherwise, it is treated as a seekable and
+    # readable IO-like object.
+    #
+    # See the instance method #extract for more information about _destination_
+    # and _options_.
+    def self.extract(archive_in, destination, options = {})
+      open(archive_in) { |z| z.extract(destination, options) }
     end
 
     # Calls #new with the given arguments and yields the resulting Zip instance
@@ -65,8 +98,8 @@ module Archive # :nodoc:
     # Zip instance is closed.
     #
     # This is a synonym for #new if no block is given.
-    def self.open(archive_path, archive_out = nil)
-      zf = new(archive_path, archive_out)
+    def self.open(archive_in, archive_out = nil)
+      zf = new(archive_in, archive_out)
       return zf unless block_given?
 
       begin
@@ -76,31 +109,50 @@ module Archive # :nodoc:
       end
     end
 
-    # Open and parse the file located at the path indicated by _archive_path_ if
-    # _archive_path_ is not +nil+ and the path exists. If _archive_out_ is
-    # unspecified or +nil+, any changes made will be saved in place, replacing
-    # the current archive with a new one having the same name.  If _archive_out_
-    # is a String, it points to a file which will recieve the new archive's
-    # contents.  Otherwise, _archive_out_ is assumed to be a writable, IO-like
-    # object operating in *binary* mode which will recieve the new archive's
-    # contents.
+    # Opens an existing archive and/or creates a new archive.  At least one of
+    # either _archive_in_ or _archive_out_ must be specified and not +nil+;
+    # otherwise an ArgumentError will be raised.
     #
-    # At least one of _archive_path_ and _archive_out_ must be specified and
-    # non-nil; otherwise, an error will be raised.
-    def initialize(archive_path, archive_out = nil)
-      if (archive_path.nil? || archive_path.empty?) &&
+    # If _archive_in_ is +nil+, a new, empty archive will be created.  If
+    # _archive_in_ is specified and not +nil+, it is used as an existing archive
+    # and parsed.  When the value is a String, it is treated as a file path
+    # pointing to a readable file; otherwise, it is assumed to be a seekable and
+    # readable IO-like object.
+    #
+    # If _archive_out_ is +nil+, changes made to the archive will be silently
+    # discarded.  If _archive_out_ is specified and not +nil+, it is used as a
+    # destination to which archive contents will be dumped if modified.  When
+    # the value is a String, it is treated as a file path; otherwise, it is
+    # assumed to be a writable IO-like object.
+    #
+    # <b>NOTE:</b> Do <b>NOT</b> try to set _archive_in_ and _archive_out_ such
+    # that they both point to the same stream or file at the same time or
+    # archive corruption will result.
+    #
+    # <b>NOTE:</b> The #close method must be called in order to save any
+    # modifications to the archive.  Due to limitations in the Ruby finalization
+    # capabilities, the #close method is _not_ automatically called when this
+    # object is garbage collected.  Make sure to call #close when finished with
+    # this object.
+    def initialize(archive_in, archive_out = nil)
+      if (archive_in.nil? ||
+          archive_in.kind_of?(String) && archive_in.empty?) &&
          (archive_out.nil? ||
           archive_out.kind_of?(String) && archive_out.empty?) then
         raise ArgumentError, 'No valid source or destination archive specified'
       end
-      @archive_path = archive_path
+
+      @archive_in = archive_in
       @archive_out = archive_out
       @entries = {}
       @dirty = false
       @comment = ''
       @closed = false
-      if ! @archive_path.nil? && File.exist?(@archive_path) then
-        @archive_in = File.new(@archive_path, 'rb')
+
+      unless @archive_in.nil? then
+        if @archive_in.kind_of?(String) then
+          @archive_in = File.new(@archive_in, 'rb')
+        end
         parse(@archive_in)
       end
     end
@@ -114,48 +166,38 @@ module Archive # :nodoc:
       @comment = comment
     end
 
-    # Close the archive.  It is at this point that any changes made to the
-    # archive will be persisted to an output stream.
+    # Closes the archive.  It is at this point that any changes made to the
+    # archive will be persisted to an output stream, assuming an output stream
+    # was set in the constructor.
+    #
+    # The input stream specified by or derived from the _archive_in_ parameter
+    # to #new is _always_ closed here.  It is left open until this method is
+    # called.  If the _archive_out_ parameter to #new was a String, the output
+    # stream will be closed, but it will be left open otherwise.
     #
     # Raises Archive::Zip::IOError if called more than once.
     def close
       raise IOError, 'closed archive' if closed?
 
-      if @dirty then
-        # There is something to write...
-        if @archive_out.nil? then
-          # Update the archive "in place".
-          tmp_archive_path = nil
-          Tempfile.open(*File.split(@archive_path).reverse) do |archive_out|
-            # Ensure the file is in binary mode for Windows.
-            archive_out.binmode
-            # Save off the path so that the temporary file can be renamed to the
-            # archive file later.
-            tmp_archive_path = archive_out.path
-            dump(archive_out)
-          end
-          File.chmod(0666 & ~File.umask, tmp_archive_path)
-        elsif @archive_out.kind_of?(String) then
-          # Open a new archive to receive the data.
+      if @dirty && ! @archive_out.nil? then
+        # Write the new archive contents if they have been updated and an output
+        # archive has been specified.
+        if @archive_out.kind_of?(String) then
+          # Open a new archive file to receive the data.
           File.open(@archive_out, 'wb') do |archive_out|
             dump(archive_out)
           end
         else
           # Assume the given object is an IO-like object and dump the archive
           # contents to it.
+          # Note that we do NOT close @archive_out in this case so that the user
+          # may do so at his/her discretion.
           dump(@archive_out)
         end
-        @archive_in.close unless @archive_in.nil?
-        # The rename must happen after the original archive is closed when
-        # running on Windows since that platform does not allow a file which is
-        # in use to be replaced as is required when trying to update the archive
-        # "in place".
-        File.rename(tmp_archive_path, @archive_path) if @archive_out.nil?
-      elsif ! @archive_in.nil? then
-        @archive_in.close
       end
 
-      closed = true
+      @archive_in.close unless @archive_in.nil?
+      @closed = true
       nil
     end
 
