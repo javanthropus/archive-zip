@@ -89,8 +89,8 @@ module Archive # :nodoc:
     #
     # See the instance method #extract for more information about _destination_
     # and _options_.
-    def self.extract(archive_in, destination, options = {})
-      open(archive_in) { |z| z.extract(destination, options) }
+    def self.extract(archive, destination, options = {})
+      open(archive) { |z| z.extract(destination, options) }
     end
 
     # Calls #new with the given arguments and yields the resulting Zip instance
