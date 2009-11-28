@@ -2,7 +2,7 @@
 # standard installation.
 begin
   require 'rubygems'
-  gem 'io-like', '>= 0.2.0'
+  gem 'io-like', '>= 0.3.0'
 rescue LoadError
   # Failed to load via rubygems.
 end
