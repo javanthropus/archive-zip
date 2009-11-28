@@ -201,7 +201,7 @@ module Archive # :nodoc:
       nil
     end
 
-    # Returns +true+ if the ZIP archive is closed, false otherwise.
+    # Returns +true+ if the ZIP archive is closed, +false+ otherwise.
     def closed?
       @closed
     end
