@@ -12,7 +12,7 @@ supported with a moderate amount of effort.
 
 == License
 
-Copyright © 2008 Jeremy Bopp <jeremy at bopp dot net>
+Copyright © 2010 Jeremy Bopp <jeremy at bopp dot net>
 
 Licensed under the same terms as Ruby -- See the included LICENSE file for
 details
@@ -76,7 +76,7 @@ Create a few archives:
   # Create a new archive which will be written to a pipe.
   # Assume $stdout is the write end a pipe.
   # (ruby example.rb | cat >example.zip)
-  Archive::Zip.open(nil, $stdout) do |z|
+  Archive::Zip.open($stdout, :w) do |z|
     z.archive('a_directory')
   end
 

@@ -55,6 +55,9 @@ module Archive # :nodoc:
     # IO-like object which will be left open after the completion of this
     # method.
     #
+    # <b>NOTE:</b> No attempt it made to prevent adding multiple entries with
+    # the same archive path.
+    #
     # See the instance method #archive for more information about _paths_ and
     # _options_.
     def self.archive(archive, paths, options = {})
@@ -69,7 +72,12 @@ module Archive # :nodoc:
             # Ensure the file is in binary mode for Windows.
             archive_out.binmode
             # Update the archive.
-            open(archive_in, archive_out) { |z| z.archive(paths, options) }
+            open(archive_in, :r) do |z_in|
+              open(archive_out, :w) do |z_out|
+                z_in.each  { |entry| z_out << entry }
+                z_out.archive(paths, options)
+              end
+            end
           end
         end
         # Set more reasonable permissions than those set by Tempfile.
@@ -77,7 +85,7 @@ module Archive # :nodoc:
         # Replace the input archive with the output archive.
         File.rename(tmp_archive_path, archive)
       else
-        open(nil, archive) { |z| z.archive(paths, options) }
+        open(archive, :w) { |z| z.archive(paths, options) }
       end
     end
 
@@ -90,7 +98,7 @@ module Archive # :nodoc:
     # See the instance method #extract for more information about _destination_
     # and _options_.
     def self.extract(archive, destination, options = {})
-      open(archive) { |z| z.extract(destination, options) }
+      open(archive, :r) { |z| z.extract(destination, options) }
     end
 
     # Calls #new with the given arguments and yields the resulting Zip instance
@@ -98,8 +106,8 @@ module Archive # :nodoc:
     # Zip instance is closed.
     #
     # This is a synonym for #new if no block is given.
-    def self.open(archive_in, archive_out = nil)
-      zf = new(archive_in, archive_out)
+    def self.open(archive, mode = :r)
+      zf = new(archive, mode)
       return zf unless block_given?
 
       begin
@@ -109,94 +117,67 @@ module Archive # :nodoc:
       end
     end
 
-    # Opens an existing archive and/or creates a new archive.  At least one of
-    # either _archive_in_ or _archive_out_ must be specified and not +nil+;
-    # otherwise an ArgumentError will be raised.
+    # Opens an existing archive and/or creates a new archive.
     #
-    # If _archive_in_ is +nil+, a new, empty archive will be created.  If
-    # _archive_in_ is specified and not +nil+, it is used as an existing archive
-    # and parsed.  When the value is a String, it is treated as a file path
-    # pointing to a readable file; otherwise, it is assumed to be a seekable and
-    # readable IO-like object.
-    #
-    # If _archive_out_ is +nil+, changes made to the archive will be silently
-    # discarded.  If _archive_out_ is specified and not +nil+, it is used as a
-    # destination to which archive contents will be dumped if modified.  When
-    # the value is a String, it is treated as a file path; otherwise, it is
-    # assumed to be a writable IO-like object.
-    #
-    # <b>NOTE:</b> Do <b>NOT</b> try to set _archive_in_ and _archive_out_ such
-    # that they both point to the same stream or file at the same time or
-    # archive corruption will result.
+    # If _archive_ is a String, it will be treated as a file path; otherwise, it
+    # is assumed to be an IO-like object with the necessary read or write
+    # support depending on the setting of _mode_.  IO-like objects are not
+    # closed when the archive is closed, but files opened from file paths are.
+    # Set _mode_ to <tt>:r</tt> or <tt>"r"</tt> to read the archive, and set it
+    # to <tt>:w</tt> or <tt>"w"</tt> to write the archive.
     #
     # <b>NOTE:</b> The #close method must be called in order to save any
     # modifications to the archive.  Due to limitations in the Ruby finalization
     # capabilities, the #close method is _not_ automatically called when this
     # object is garbage collected.  Make sure to call #close when finished with
     # this object.
-    def initialize(archive_in, archive_out = nil)
-      if (archive_in.nil? ||
-          archive_in.kind_of?(String) && archive_in.empty?) &&
-         (archive_out.nil? ||
-          archive_out.kind_of?(String) && archive_out.empty?) then
-        raise ArgumentError, 'No valid source or destination archive specified'
+    def initialize(archive, mode = :r)
+      @archive = archive
+      mode = mode.to_sym
+      if mode == :r || mode == :w then
+        @mode = mode
+      else
+        raise ArgumentError, "illegal access mode #{mode}"
       end
 
-      @archive_in = archive_in
-      @archive_out = archive_out
-      @entries = {}
-      @dirty = false
+      @close_delegate = false
+      if @archive.kind_of?(String) then
+        @close_delegate = true
+        if mode == :r then
+          @archive = File.open(@archive, 'rb')
+        else
+          @archive = File.open(@archive, 'wb')
+        end
+      end
+      @entries = []
       @comment = ''
       @closed = false
-
-      unless @archive_in.nil? then
-        if @archive_in.kind_of?(String) then
-          @archive_in = File.new(@archive_in, 'rb')
-        end
-        parse(@archive_in)
-      end
     end
 
     # A comment string for the ZIP archive.
-    attr_reader :comment
+    attr_accessor :comment
 
-    # Sets the comment string for the archive and flags the archive as modified.
-    def comment=(comment)
-      @dirty = true
-      @comment = comment
-    end
-
-    # Closes the archive.  It is at this point that any changes made to the
-    # archive will be persisted to an output stream, assuming an output stream
-    # was set in the constructor.
+    # Closes the archive.
     #
-    # The input stream specified by or derived from the _archive_in_ parameter
-    # to #new is _always_ closed here.  It is left open until this method is
-    # called.  If the _archive_out_ parameter to #new was a String, the output
-    # stream will be closed, but it will be left open otherwise.
+    # Failure to close the archive by calling this method may result in a loss
+    # of data for writable archives.
+    #
+    # <b>NOTE:</b> The underlying stream is only closed if the archive was
+    # opened with a String for the _archive_ parameter.
     #
     # Raises Archive::Zip::IOError if called more than once.
     def close
       raise IOError, 'closed archive' if closed?
 
-      if @dirty && ! @archive_out.nil? then
-        # Write the new archive contents if they have been updated and an output
-        # archive has been specified.
-        if @archive_out.kind_of?(String) then
-          # Open a new archive file to receive the data.
-          File.open(@archive_out, 'wb') do |archive_out|
-            dump(archive_out)
-          end
-        else
-          # Assume the given object is an IO-like object and dump the archive
-          # contents to it.
-          # Note that we do NOT close @archive_out in this case so that the user
-          # may do so at his/her discretion.
-          dump(@archive_out)
-        end
+      if writable? then
+        # Write the new archive contents.
+        dump(@archive)
       end
 
-      @archive_in.close unless @archive_in.nil?
+      # Note that we only close delegate streams which are opened by us so that
+      # the user may do so for other delegate streams at his/her discretion.
+      @archive.close if @close_delegate
+
       @closed = true
       nil
     end
@@ -206,57 +187,50 @@ module Archive # :nodoc:
       @closed
     end
 
-    # When the ZIP archive is open, this method iterates through each entry in
-    # turn yielding each one to the given block.  Since Zip includes Enumerable,
-    # Zip instances are enumerables of Entry instances.
-    #
-    # Raises Archive::Zip::IOError if called after #close.
-    def each(&b)
-      raise IOError, 'closed archive' if @closed
-
-      @entries.each_value(&b)
+    # Returns +true+ if the ZIP archive is readable, +false+ otherwise.
+    def readable?
+      @mode == :r
     end
 
-    # Add _entry_ into the ZIP archive replacing any existing entry with the
-    # same zip path.
+    # Returns +true+ if the ZIP archive is writable, +false+ otherwise.
+    def writable?
+      @mode == :w
+    end
+
+    # Iterates through each entry of a readable ZIP archive in turn yielding
+    # each one to the given block.
     #
-    # Raises Archive::Zip::IOError if called after #close.
+    # Raises Archive::Zip::IOError if called on a non-readable archive or after
+    # the archive is closed.
+    def each(&b)
+      raise IOError, 'non-readable archive' unless readable?
+      raise IOError, 'closed archive' if closed?
+
+      unless @parse_complete then
+        parse(@archive)
+        @parse_complete = true
+      end
+      @entries.each(&b)
+    end
+
+    # Adds _entry_ into a writable ZIP archive.
+    #
+    # <b>NOTE:</b> No attempt it made to prevent adding multiple entries with
+    # the same archive path.
+    #
+    # Raises Archive::Zip::IOError if called on a non-writable archive or after
+    # the archive is closed.
     def add_entry(entry)
-      raise IOError, 'closed archive' if @closed
+      raise IOError, 'non-writable archive' unless writable?
+      raise IOError, 'closed archive' if closed?
       unless entry.kind_of?(Entry) then
         raise ArgumentError, 'Archive::Zip::Entry instance required'
       end
 
-      @entries[entry.zip_path] = entry
-      @dirty = true
+      @entries << entry
       self
     end
     alias :<< :add_entry
-
-    # Look up an entry based on the zip path located in _zip_path_.  Returns
-    # +nil+ if no entry is found.
-    def get_entry(zip_path)
-      @entries[zip_path]
-    end
-    alias :[] :get_entry
-
-    # Removes an entry from the ZIP file and returns the entry or +nil+ if no
-    # entry was found to remove.  If _entry_ is an instance of
-    # Archive::Zip::Entry, the zip_path attribute is used to find the entry to
-    # remove; otherwise, _entry_ is assumed to be a zip path matching an entry
-    # in the ZIP archive.
-    #
-    # Raises Archive::Zip::IOError if called after #close.
-    def remove_entry(entry)
-      raise IOError, 'closed archive' if @closed
-
-      zip_path = entry
-      zip_path = entry.zip_path if entry.kind_of?(Entry)
-      entry = @entries.delete(zip_path)
-      entry = entry[1] unless entry.nil?
-      @dirty ||= ! entry.nil?
-      entry
-    end
 
     # Adds _paths_ to the archive.  _paths_ may be either a single path or an
     # Array of paths.  The files and directories referenced by _paths_ are added
@@ -315,10 +289,13 @@ module Archive # :nodoc:
     # Any other options which are supported by Archive::Zip::Entry.from_file are
     # also supported.
     #
-    # Raises Archive::Zip::IOError if called after #close.  Raises
-    # Archive::Zip::EntryError if the <b>:on_error</b> option is either unset or
-    # indicates that the error should be raised and
-    # Archive::Zip::Entry.from_file raises an error.
+    # <b>NOTE:</b> No attempt it made to prevent adding multiple entries with
+    # the same archive path.
+    #
+    # Raises Archive::Zip::IOError if called on a non-writable archive or after
+    # the archive is closed.  Raises Archive::Zip::EntryError if the
+    # <b>:on_error</b> option is either unset or indicates that the error should
+    # be raised and Archive::Zip::Entry.from_file raises an error.
     #
     # == Example
     #
@@ -365,7 +342,8 @@ module Archive # :nodoc:
     #                    zip-test/dir1/
     #                    zip-test/dir2/
     def archive(paths, options = {})
-      raise IOError, 'closed archive' if @closed
+      raise IOError, 'non-writable archive' unless writable?
+      raise IOError, 'closed archive' if closed?
 
       # Ensure that paths is an enumerable.
       paths = [paths] unless paths.kind_of?(Enumerable)
@@ -520,7 +498,8 @@ module Archive # :nodoc:
     # Any other options which are supported by Archive::Zip::Entry#extract are
     # also supported.
     #
-    # Raises Archive::Zip::IOError if called after #close.
+    # Raises Archive::Zip::IOError if called on a non-readable archive or after
+    # the archive is closed.
     #
     # == Example
     #
@@ -577,7 +556,8 @@ module Archive # :nodoc:
     #               +- dir1
     #               +- dir2
     def extract(destination, options = {})
-      raise IOError, 'closed archive' if @closed
+      raise IOError, 'non-readable archive' unless readable?
+      raise IOError, 'closed archive' if closed?
 
       # Ensure that unspecified options have default values.
       options[:directories] = true  unless options.has_key?(:directories)
@@ -689,9 +669,8 @@ module Archive # :nodoc:
       loop do
         signature = io.readbytes(4)
         break unless signature == CFH_SIGNATURE
-        add_entry(Zip::Entry.parse(io))
+        @entries << Zip::Entry.parse(io)
       end
-      @dirty = false
       # Maybe add support for digital signatures and ZIP64 records... Later
 
       nil
@@ -734,12 +713,11 @@ module Archive # :nodoc:
     # bytes written.
     def dump(io)
       bytes_written = 0
-      entries = @entries.values
-      entries.each do |entry|
+      @entries.each do |entry|
         bytes_written += entry.dump_local_file_record(io, bytes_written)
       end
       central_directory_offset = bytes_written
-      entries.each do |entry|
+      @entries.each do |entry|
         bytes_written += entry.dump_central_file_record(io)
       end
       central_directory_length = bytes_written - central_directory_offset
@@ -748,8 +726,8 @@ module Archive # :nodoc:
         [
           0,
           0,
-          entries.length,
-          entries.length,
+          @entries.length,
+          @entries.length,
           central_directory_length,
           central_directory_offset,
           comment.length
