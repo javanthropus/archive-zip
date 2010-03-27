@@ -214,7 +214,7 @@ module Archive; class Zip
     # entry.
     def self.parse(io)
       # Error out if the IO object is not confirmed seekable.
-      unless io.respond_to?(:seekable?) and io.seekable? then
+      unless io.respond_to?(:seekable?) && io.seekable? then
         raise Zip::IOError, 'non-seekable IO object given'
       end
 

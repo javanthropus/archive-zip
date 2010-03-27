@@ -661,7 +661,7 @@ module Archive # :nodoc:
     # Raises Archive::Zip::IOError if _io_ is not seekable.
     def parse(io)
       # Error out if the IO object is not confirmed seekable.
-      raise Zip::IOError, 'non-seekable IO object given' unless io.respond_to?(:seekable?) and io.seekable?
+      raise Zip::IOError, 'non-seekable IO object given' unless io.respond_to?(:seekable?) && io.seekable?
 
       socd_pos = find_central_directory(io)
       io.seek(socd_pos)
