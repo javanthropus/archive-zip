@@ -93,16 +93,6 @@ class IOWindow
     @unbuffered_pos = new_pos
   end
 
-  def unbuffered_write(string)
-    restore_self
-
-    # Ensure that the outputted string will not extend past the window.
-    string = string.slice(0, @window_size - @unbuffered_pos)
-    @io.write(string)
-  ensure
-    restore_delegate
-  end
-
   # Restores the state of the delegate IO object to that saved by a prior call
   # to #restore_self.
   def restore_delegate
