@@ -2,10 +2,8 @@ require 'fileutils'
 require 'set'
 require 'tempfile'
 
-require 'archive/support/io'
 require 'archive/support/ioextensions'
 require 'archive/support/iowindow'
-require 'archive/support/stringio'
 require 'archive/support/time'
 require 'archive/support/zlib'
 require 'archive/zip/codec'
@@ -654,14 +652,8 @@ module Archive # :nodoc:
 
     private
 
-    # <b>NOTE:</b> For now _io_ MUST be seekable and report such by returning
-    # +true+ from its seekable? method.  See IO#seekable?.
-    #
-    # Raises Archive::Zip::IOError if _io_ is not seekable.
+    # <b>NOTE:</b> For now _io_ MUST be seekable.
     def parse(io)
-      # Error out if the IO object is not confirmed seekable.
-      raise Zip::IOError, 'non-seekable IO object given' unless io.respond_to?(:seekable?) && io.seekable?
-
       socd_pos = find_central_directory(io)
       io.seek(socd_pos)
       # Parse each entry in the central directory.

@@ -15,8 +15,6 @@ class IOWindow
   # must be an integer greater than or equal to 0.  _window_size_ must be an
   # integer greater than or equal to 0.
   def initialize(io, window_position, window_size)
-    raise ArgumentError, 'non-seekable IO object given' unless io.seekable?
-
     @io = io
     @unbuffered_pos = 0
     self.window_position = window_position

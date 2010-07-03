@@ -1,3 +1,5 @@
+require 'stringio'
+
 require 'archive/support/ioextensions'
 require 'archive/zip/codec/deflate'
 require 'archive/zip/codec/null_encryption'
@@ -202,23 +204,16 @@ module Archive; class Zip
     # positioned at the start of a central file record following the signature
     # for that record.
     #
-    # <b>NOTE:</b> For now _io_ MUST be seekable and report such by returning
-    # +true+ from its <i>seekable?</i> method.  See IO#seekable?.
+    # <b>NOTE:</b> For now _io_ MUST be seekable.
     #
     # Currently, the only entry objects returned are instances of
     # Archive::Zip::Entry::File, Archive::Zip::Entry::Directory, and
     # Archive::Zip::Entry::Symlink.  Any other kind of entry will be mapped into
     # an instance of Archive::Zip::Entry::File.
     #
-    # Raises Archive::Zip::IOError if _io_ is not seekable.  Raises
-    # Archive::Zip::EntryError for any other errors related to processing the
-    # entry.
+    # Raises Archive::Zip::EntryError for any other errors related to processing
+    # the entry.
     def self.parse(io)
-      # Error out if the IO object is not confirmed seekable.
-      unless io.respond_to?(:seekable?) && io.seekable? then
-        raise Zip::IOError, 'non-seekable IO object given'
-      end
-
       # Parse the central file record and then use the information found there
       # to locate and parse the corresponding local file record.
       cfr = parse_central_file_record(io)
@@ -597,21 +592,34 @@ module Archive; class Zip
       @local_file_record_position = local_file_record_position
       bytes_written = 0
 
+      # Assume that no trailing data descriptor will be necessary.
+      need_trailing_data_descriptor = false
+      begin
+        io.pos
+      rescue Errno::ESPIPE
+        # A trailing data descriptor is required for non-seekable IO.
+        need_trailing_data_descriptor = true
+      end
+      if encryption_codec.class == Codec::TraditionalEncryption then
+        # HACK:
+        # According to the ZIP specification, a trailing data descriptor should
+        # only be required when writing to non-seekable IO , but InfoZIP
+        # *always* does this when using traditional encryption even though it
+        # will also write the data descriptor in the usual place if possible.
+        # Failure to emulate InfoZIP in this behavior will prevent InfoZIP
+        # compatibility with traditionally encrypted entries.
+        need_trailing_data_descriptor = true
+        # HACK:
+        # The InfoZIP implementation of traditional encryption requires that the
+        # the last modified file time be used as part of the encryption header.
+        # This is a deviation from the ZIP specification.
+        encryption_codec.mtime = mtime
+      end
+
+      # Set the general purpose flags.
       general_purpose_flags  = compression_codec.general_purpose_flags
       general_purpose_flags |= encryption_codec.general_purpose_flags
-
-      if ! io.seekable? ||
-         encryption_codec.class == Codec::TraditionalEncryption then
-        # Flag that the data descriptor record will follow the compressed file
-        # data of this entry.
-        #
-        # HACK:
-        # According to the ZIP specification, this should only be done if the IO
-        # object cannot be accessed randomly, but InfoZIP *always* sets this
-        # flag when using traditional encryption even though it will also write
-        # the data descriptor in the usual place if possible.  Failure to
-        # emulate InfoZIP in this behavior will prevent InfoZIP compatibility
-        # with traditionally encrypted entries.
+      if need_trailing_data_descriptor then
         general_purpose_flags |= FLAG_DATA_DESCRIPTOR_FOLLOWS
       end
 
@@ -622,6 +630,7 @@ module Archive; class Zip
         version_needed_to_extract = encryption_codec.version_needed_to_extract
       end
 
+      # Write the data.
       bytes_written += io.write(LFH_SIGNATURE)
       extra_field_data = local_extra_field_data
       bytes_written += io.write(
@@ -640,15 +649,6 @@ module Archive; class Zip
       bytes_written += io.write(zip_path)
       bytes_written += io.write(extra_field_data)
 
-      if encryption_codec.class == Codec::TraditionalEncryption then
-        # HACK:
-        # Traditional encryption requires that the last 2 bytes of the header it
-        # uses are the 2 low order bytes of the last modified file time in DOS
-        # format.  This is different than stated in the ZIP specification and
-        # rather comes from the InfoZIP implementation.
-        encryption_codec.mtime = mtime
-      end
-
       # Pipeline a compressor into an encryptor, write all the file data to the
       # compressor, and get a data descriptor from it.
       encryption_codec.encryptor(io, password) do |e|
@@ -663,31 +663,23 @@ module Archive; class Zip
         end
         e.close(false)
       end
-
       bytes_written += @data_descriptor.compressed_size
-      if io.seekable? then
+
+      # Write the trailing data descriptor if necessary.
+      if need_trailing_data_descriptor then
+        bytes_written += io.write(DD_SIGNATURE)
+        bytes_written += @data_descriptor.dump(io)
+      end
+
+      begin
         # Update the data descriptor located before the compressed data for the
         # entry.
         saved_position = io.pos
         io.pos = @local_file_record_position + 14
         @data_descriptor.dump(io)
         io.pos = saved_position
-      end
-
-      if ! io.seekable? ||
-         encryption_codec.class == Codec::TraditionalEncryption then
-        # Write the data descriptor after the compressed file data for the
-        # entry.
-        #
-        # HACK:
-        # According to the ZIP specification, this should only be done if the IO
-        # object cannot be accessed randomly, but InfoZIP *always* does this
-        # when using traditional encryption even though it will also write the
-        # data descriptor in the usual place if possible.  Failure to emulate
-        # InfoZIP in this behavior will prevent InfoZIP compatibility with
-        # traditionally encrypted entries.
-        bytes_written += io.write(DD_SIGNATURE)
-        bytes_written += @data_descriptor.dump(io)
+      rescue Errno::ESPIPE
+        # Ignore a failed attempt to update the data descriptor.
       end
 
       bytes_written
@@ -701,21 +693,29 @@ module Archive; class Zip
     def dump_central_file_record(io)
       bytes_written = 0
 
+      # Assume that no trailing data descriptor will be necessary.
+      need_trailing_data_descriptor = false
+      begin
+        io.pos
+      rescue Errno::ESPIPE
+        # A trailing data descriptor is required for non-seekable IO.
+        need_trailing_data_descriptor = true
+      end
+      if encryption_codec.class == Codec::TraditionalEncryption then
+        # HACK:
+        # According to the ZIP specification, a trailing data descriptor should
+        # only be required when writing to non-seekable IO , but InfoZIP
+        # *always* does this when using traditional encryption even though it
+        # will also write the data descriptor in the usual place if possible.
+        # Failure to emulate InfoZIP in this behavior will prevent InfoZIP
+        # compatibility with traditionally encrypted entries.
+        need_trailing_data_descriptor = true
+      end
+
+      # Set the general purpose flags.
       general_purpose_flags  = compression_codec.general_purpose_flags
       general_purpose_flags |= encryption_codec.general_purpose_flags
-
-      if ! io.seekable? ||
-         encryption_codec.class == Codec::TraditionalEncryption then
-        # Flag that the data descriptor record will follow the compressed file
-        # data of this entry.
-        #
-        # HACK:
-        # According to the ZIP specification, this should only be done if the IO
-        # object cannot be accessed randomly, but InfoZIP *always* sets this
-        # flag when using traditional encryption even though it will also write
-        # the data descriptor in the usual place if possible.  Failure to
-        # emulate InfoZIP in this behavior will prevent InfoZIP compatibility
-        # with encrypted entries.
+      if need_trailing_data_descriptor then
         general_purpose_flags |= FLAG_DATA_DESCRIPTOR_FOLLOWS
       end
 
@@ -726,6 +726,7 @@ module Archive; class Zip
         version_needed_to_extract = encryption_codec.version_needed_to_extract
       end
 
+      # Write the data.
       bytes_written += io.write(CFH_SIGNATURE)
       bytes_written += io.write(
         [
