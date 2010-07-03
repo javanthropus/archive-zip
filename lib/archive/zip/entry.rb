@@ -1,3 +1,4 @@
+require 'archive/support/ioextensions'
 require 'archive/zip/codec/deflate'
 require 'archive/zip/codec/null_encryption'
 require 'archive/zip/codec/store'
@@ -197,9 +198,9 @@ module Archive; class Zip
     end
 
     # Creates and returns a new entry object by parsing from the current
-    # position of _io_.  _io_ must be a readable, IO-like object which provides
-    # a _readbytes_ method, and it must be positioned at the start of a central
-    # file record following the signature for that record.
+    # position of _io_.  _io_ must be a readable, IO-like object which is
+    # positioned at the start of a central file record following the signature
+    # for that record.
     #
     # <b>NOTE:</b> For now _io_ MUST be seekable and report such by returning
     # +true+ from its <i>seekable?</i> method.  See IO#seekable?.
@@ -223,7 +224,7 @@ module Archive; class Zip
       cfr = parse_central_file_record(io)
       next_record_position = io.pos
       io.seek(cfr.local_header_position)
-      unless io.readbytes(4) == LFH_SIGNATURE then
+      unless IOExtensions.read_exactly(io, 4) == LFH_SIGNATURE then
         raise Zip::EntryError, 'bad local file header signature'
       end
       lfr = parse_local_file_record(io, cfr.compressed_size)
@@ -299,9 +300,9 @@ module Archive; class Zip
     private
 
     # Parses a central file record and returns a CFHRecord instance containing
-    # the parsed data.  _io_ must be a readable, IO-like object which provides a
-    # _readbytes_ method, and it must be positioned at the start of a central
-    # file record following the signature for that record.
+    # the parsed data.  _io_ must be a readable, IO-like object which is
+    # positioned at the start of a central file record following the signature
+    # for that record.
     def self.parse_central_file_record(io)
       cfr = CFHRecord.new
 
@@ -319,26 +320,27 @@ module Archive; class Zip
       cfr.disk_number_start,
       cfr.internal_file_attributes,
       cfr.external_file_attributes,
-      cfr.local_header_position = io.readbytes(42).unpack('vvvvVVVVvvvvvVV')
+      cfr.local_header_position =
+        IOExtensions.read_exactly(io, 42).unpack('vvvvVVVVvvvvvVV')
 
-      cfr.zip_path = io.readbytes(file_name_length)
+      cfr.zip_path = IOExtensions.read_exactly(io, file_name_length)
       cfr.extra_fields = parse_central_extra_fields(
-        io.readbytes(extra_fields_length)
+        IOExtensions.read_exactly(io, extra_fields_length)
       )
-      cfr.comment = io.readbytes(comment_length)
+      cfr.comment = IOExtensions.read_exactly(io, comment_length)
 
       # Convert from MSDOS time to Unix time.
       cfr.mtime = DOSTime.new(dos_mtime).to_time
 
       cfr
-    rescue EOFError, TruncatedDataError
+    rescue EOFError
       raise Zip::EntryError, 'unexpected end of file'
     end
 
     # Parses a local file record and returns a LFHRecord instance containing the
-    # parsed data.  _io_ must be a readable, IO-like object which provides a
-    # readbytes method, and it must be positioned at the start of a local file
-    # record following the signature for that record.
+    # parsed data.  _io_ must be a readable, IO-like object which is positioned
+    # at the start of a local file record following the signature for that
+    # record.
     #
     # If the record to be parsed is flagged to have a trailing data descriptor
     # record, _expected_compressed_size_ must be set to an integer counting the
@@ -356,11 +358,12 @@ module Archive; class Zip
       lfr.compressed_size,
       lfr.uncompressed_size,
       file_name_length,
-      extra_fields_length = io.readbytes(26).unpack('vvvVVVVvv')
+      extra_fields_length =
+        IOExtensions.read_exactly(io, 26).unpack('vvvVVVVvv')
 
-      lfr.zip_path = io.readbytes(file_name_length)
+      lfr.zip_path = IOExtensions.read_exactly(io, file_name_length)
       lfr.extra_fields = parse_local_extra_fields(
-        io.readbytes(extra_fields_length)
+        IOExtensions.read_exactly(io, extra_fields_length)
       )
 
       # Convert from MSDOS time to Unix time.
@@ -373,21 +376,22 @@ module Archive; class Zip
         # libraries create trailing data descriptor records with a preceding
         # signature while others do not.
         # This handles both cases.
-        possible_signature = io.readbytes(4)
+        possible_signature = IOExtensions.read_exactly(io, 4)
         if possible_signature == DD_SIGNATURE then
           lfr.crc32,
           lfr.compressed_size,
-          lfr.uncompressed_size = io.readbytes(12).unpack('VVV')
+          lfr.uncompressed_size =
+            IOExtensions.read_exactly(io, 12).unpack('VVV')
         else
           lfr.crc32 = possible_signature.unpack('V')[0]
           lfr.compressed_size,
-          lfr.uncompressed_size = io.readbytes(8).unpack('VV')
+          lfr.uncompressed_size = IOExtensions.read_exactly(io, 8).unpack('VV')
         end
         io.pos = saved_pos
       end
 
       lfr
-    rescue EOFError, TruncatedDataError
+    rescue EOFError
       raise Zip::EntryError, 'unexpected end of file'
     end
 
@@ -398,8 +402,12 @@ module Archive; class Zip
       StringIO.open(bytes) do |io|
         extra_fields = []
         while ! io.eof? do
-          header_id, data_size = io.readbytes(4).unpack('vv')
-          data = io.readbytes(data_size)
+          begin
+            header_id, data_size = IOExtensions.read_exactly(io, 4).unpack('vv')
+            data = IOExtensions.read_exactly(io, data_size)
+          rescue ::EOFError
+            raise EntryError, 'insufficient data available'
+          end
 
           extra_fields << ExtraField.parse_central(header_id, data)
         end
@@ -414,8 +422,12 @@ module Archive; class Zip
       StringIO.open(bytes) do |io|
         extra_fields = []
         while ! io.eof? do
-          header_id, data_size = io.readbytes(4).unpack('vv')
-          data = io.readbytes(data_size)
+          begin
+            header_id, data_size = IOExtensions.read_exactly(io, 4).unpack('vv')
+            data = IOExtensions.read_exactly(io, data_size)
+          rescue ::EOFError
+            raise EntryError, 'insufficient data available'
+          end
 
           extra_fields << ExtraField.parse_local(header_id, data)
         end

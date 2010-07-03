@@ -1,5 +1,3 @@
-require 'readbytes'
-
 class IO
   # Returns +true+ if the seek method of this IO instance would succeed, +false+
   # otherwise.

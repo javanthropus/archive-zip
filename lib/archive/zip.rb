@@ -1,10 +1,9 @@
-#!/usr/bin/env ruby
-
 require 'fileutils'
 require 'set'
 require 'tempfile'
 
 require 'archive/support/io'
+require 'archive/support/ioextensions'
 require 'archive/support/iowindow'
 require 'archive/support/stringio'
 require 'archive/support/time'
@@ -667,7 +666,7 @@ module Archive # :nodoc:
       io.seek(socd_pos)
       # Parse each entry in the central directory.
       loop do
-        signature = io.readbytes(4)
+        signature = IOExtensions.read_exactly(io, 4)
         break unless signature == CFH_SIGNATURE
         @entries << Zip::Entry.parse(io)
       end
@@ -692,9 +691,12 @@ module Archive # :nodoc:
       eocd_offset = -22
       loop do
         io.seek(eocd_offset, IO::SEEK_END)
-        if io.readbytes(4) == EOCD_SIGNATURE then
+        if IOExtensions.read_exactly(io, 4) == EOCD_SIGNATURE then
           io.seek(16, IO::SEEK_CUR)
-          break if io.readbytes(2).unpack('v')[0] == (eocd_offset + 22).abs
+          if IOExtensions.read_exactly(io, 2).unpack('v')[0] ==
+               (eocd_offset + 22).abs then
+            break
+          end
         end
         eocd_offset -= 1
       end
@@ -703,7 +705,7 @@ module Archive # :nodoc:
       # Now, jump into the location in the record which contains a pointer to
       # the start of the central directory record and return the value.
       io.seek(eocd_offset + 16, IO::SEEK_END)
-      return io.readbytes(4).unpack('V')[0]
+      return IOExtensions.read_exactly(io, 4).unpack('V')[0]
     rescue Errno::EINVAL
       raise Zip::UnzipError, 'unable to locate end-of-central-directory record'
     end
