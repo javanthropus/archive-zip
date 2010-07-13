@@ -27,9 +27,10 @@ class IOWindow
   # Set the file position at which this window begins.
   # _window_position_ must be an integer greater than or equal to 0.
   def window_position=(window_position)
-    unless window_position.kind_of?(Fixnum) then
-      raise ArgumentError, 'non-integer window position given'
+    unless window_position.respond_to?(:to_int) then
+      raise TypeError, "can't convert #{window_position.class} into Integer"
     end
+    window_position = window_position.to_int
     if window_position < 0 then
       raise ArgumentError, 'non-positive window position given'
     end
@@ -43,9 +44,10 @@ class IOWindow
   # Set the size of the window.
   # _window_size_ must be an integer greater than or equal to 0.
   def window_size=(window_size)
-    unless window_size.kind_of?(Fixnum) then
-      raise ArgumentError, 'non-integer window size given'
+    unless window_size.respond_to?(:to_int) then
+      raise TypeError, "can't convert #{window_size.class} into Integer"
     end
+    window_size = window_size.to_int
     raise ArgumentError, 'non-positive window size given' if window_size < 0
 
     @window_size = window_size
