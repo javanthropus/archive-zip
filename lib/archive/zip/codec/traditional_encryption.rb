@@ -1,3 +1,4 @@
+require 'archive/support/integer'
 require 'archive/support/io-like'
 require 'archive/support/time'
 require 'archive/support/zlib'
@@ -333,7 +334,7 @@ module Archive; class Zip; module Codec
         @total_bytes_out += buffer.length
 
         (0 ... buffer.size).each do |i|
-          buffer[i] = (buffer[i] ^ decrypt_byte)
+          buffer[i] = (buffer[i].ord ^ decrypt_byte).chr
           update_keys(buffer[i].chr)
         end
         buffer
