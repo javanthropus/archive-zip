@@ -39,8 +39,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#write" do
     # Ensure repeatable test data is used for encryption header.
     srand(0)
     encrypted_data = StringIO.new
-    # Override encrypted_data.write to raise Errno::EAGAIN every other time it's
-    # called.
+    # Override encrypted_data.write to perform writes 1 byte at a time.
     class << encrypted_data
       alias :write_orig :write
       def write(buffer)
@@ -95,7 +94,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#write" do
     # Ensure repeatable test data is used for encryption header.
     srand(0)
     encrypted_data = StringIO.new
-    # Override encrypted_data.write to raise Errno::EAGAIN every other time it's
+    # Override encrypted_data.write to raise Errno::EINTR every other time it's
     # called.
     class << encrypted_data
       alias :write_orig :write
