@@ -121,9 +121,6 @@ module Archive; class Zip; module Codec
 
         super(io, password, mtime)
 
-        # Reset the total bytes written in order to disregard the header.
-        @total_bytes_in = 0
-
         # Assume that the delegate IO object is already buffered.
         self.flush_size = 0
       end
@@ -165,17 +162,19 @@ module Archive; class Zip; module Codec
           header << rand(256).chr
         end
         time = mtime.to_dos_time.to_i
-        header << (time & 0xff).chr
-        header << ((time >> 8) & 0xff).chr
+        header << (time & 0xff).chr << ((time >> 8) & 0xff).chr
+
         # Take care to ensure that all bytes in the header are written.
         while header.size > 0 do
           begin
-            bytes_written = unbuffered_write(header)
-            header.slice!(0, bytes_written)
+            header.slice!(0, unbuffered_write(header))
           rescue Errno::EAGAIN, Errno::EINTR
             sleep(1)
           end
         end
+
+        # Reset the total bytes written in order to disregard the header.
+        @total_bytes_in = 0
 
         nil
       end
@@ -287,9 +286,6 @@ module Archive; class Zip; module Codec
 
         super(io, password, mtime)
 
-        # Reset the total bytes read in order to disregard the header.
-        @total_bytes_out = 0
-
         # Assume that the delegate IO object is already buffered.
         self.fill_size = 0
       end
@@ -321,6 +317,9 @@ module Archive; class Zip; module Codec
           end
         end
 
+        # Reset the total bytes read in order to disregard the header.
+        @total_bytes_out = 0
+
         nil
       end
 
@@ -333,7 +332,7 @@ module Archive; class Zip; module Codec
         raise EOFError, 'end of file reached' if buffer.nil?
         @total_bytes_out += buffer.length
 
-        (0 ... buffer.size).each do |i|
+        0.upto(buffer.length - 1) do |i|
           buffer[i] = (buffer[i].ord ^ decrypt_byte).chr
           update_keys(buffer[i].chr)
         end
