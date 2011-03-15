@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/support/zlib'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Zlib::ZReader#read" do
   it "calls the read method of the delegate" do
@@ -25,20 +25,20 @@ describe "Zlib::ZReader#read" do
   end
 
   it "raises Zlib::DataError when reading invalid data" do
-    Zlib::ZReader.open(StringIO.new('This is not compressed data')) do |zr|
+    Zlib::ZReader.open(BinaryStringIO.new('This is not compressed data')) do |zr|
       lambda { zr.read }.should raise_error(Zlib::DataError)
     end
   end
 
   it "raises Zlib::BufError when reading truncated data" do
     truncated_data = ZlibSpecs.compressed_data { |cd| cd.read(100) }
-    Zlib::ZReader.open(StringIO.new(truncated_data)) do |zr|
+    Zlib::ZReader.open(BinaryStringIO.new(truncated_data)) do |zr|
       lambda { zr.read }.should raise_error(Zlib::BufError)
     end
   end
 
   it "raises Zlib::BufError when reading empty data" do
-    Zlib::ZReader.open(StringIO.new()) do |zr|
+    Zlib::ZReader.open(BinaryStringIO.new()) do |zr|
       lambda { zr.read }.should raise_error(Zlib::BufError)
     end
   end

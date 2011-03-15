@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/traditional_encryption'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#tell" do
   it "returns the current position of the stream" do
-    encrypted_data = StringIO.new
+    encrypted_data = BinaryStringIO.new
     Archive::Zip::Codec::TraditionalEncryption::Encrypt.open(
       encrypted_data,
       TraditionalEncryptionSpecs.password,

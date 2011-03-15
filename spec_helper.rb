@@ -36,10 +36,13 @@ unless ENV['MSPEC_RUNNER']
   end
 end
 
-minimum_version = "1.5.9"
+minimum_version = "1.5.17"
 unless MSpec::VERSION >= minimum_version
   puts "Please install MSpec version >= #{minimum_version} to run the specs"
   exit 1
 end
+
+# Set a flag when encodings are supported.
+MSpec.enable_feature :encoding if Object.const_defined?(:Encoding)
 
 $VERBOSE = nil unless ENV['OUTPUT_WARNINGS']

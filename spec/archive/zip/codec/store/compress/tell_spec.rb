@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/store'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::Store::Compress#tell" do
   it "returns the current position of the stream" do
-    sio = StringIO.new
+    sio = BinaryStringIO.new
     Archive::Zip::Codec::Store::Compress.open(sio) do |c|
       c.tell.should == 0
       c.write('test1')

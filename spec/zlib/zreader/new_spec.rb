@@ -1,16 +1,16 @@
 require File.dirname(__FILE__) + '/../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/support/zlib'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Zlib::ZReader.new" do
   it "returns a new instance" do
-    Zlib::ZReader.new(StringIO.new).class.should == Zlib::ZReader
+    Zlib::ZReader.new(BinaryStringIO.new).class.should == Zlib::ZReader
   end
 
   it "does not require window_bits to be set" do
     data = ZlibSpecs.test_data
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     Zlib::ZWriter.open(compressed_data) do |zw|
       zw.write(data)
     end
@@ -23,7 +23,7 @@ describe "Zlib::ZReader.new" do
 
   it "allows window_bits to be set" do
     data = ZlibSpecs.test_data
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     window_bits = -Zlib::MAX_WBITS
     Zlib::ZWriter.open(
       compressed_data, Zlib::DEFAULT_COMPRESSION, window_bits

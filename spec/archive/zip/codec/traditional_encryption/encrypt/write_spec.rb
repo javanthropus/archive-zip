@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/traditional_encryption'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#write" do
   it "calls the write method of the delegate" do
@@ -24,7 +24,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#write" do
   it "writes encrypted data to the delegate" do
     # Ensure repeatable test data is used for encryption header.
     srand(0)
-    encrypted_data = StringIO.new
+    encrypted_data = BinaryStringIO.new
     Archive::Zip::Codec::TraditionalEncryption::Encrypt.open(
       encrypted_data,
       TraditionalEncryptionSpecs.password,
@@ -38,7 +38,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#write" do
   it "writes encrypted data to a delegate that only performs partial writes" do
     # Ensure repeatable test data is used for encryption header.
     srand(0)
-    encrypted_data = StringIO.new
+    encrypted_data = BinaryStringIO.new
     # Override encrypted_data.write to perform writes 1 byte at a time.
     class << encrypted_data
       alias :write_orig :write
@@ -60,7 +60,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#write" do
   it "writes encrypted data to a delegate that raises Errno::EAGAIN" do
     # Ensure repeatable test data is used for encryption header.
     srand(0)
-    encrypted_data = StringIO.new
+    encrypted_data = BinaryStringIO.new
     # Override encrypted_data.write to raise Errno::EAGAIN every other time it's
     # called.
     class << encrypted_data
@@ -93,7 +93,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#write" do
   it "writes encrypted data to a delegate that raises Errno::EINTR" do
     # Ensure repeatable test data is used for encryption header.
     srand(0)
-    encrypted_data = StringIO.new
+    encrypted_data = BinaryStringIO.new
     # Override encrypted_data.write to raise Errno::EINTR every other time it's
     # called.
     class << encrypted_data

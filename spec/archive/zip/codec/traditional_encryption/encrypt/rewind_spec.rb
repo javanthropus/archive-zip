@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/traditional_encryption'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#rewind" do
   it "can rewind the stream when the delegate responds to rewind" do
-    encrypted_data = StringIO.new
+    encrypted_data = BinaryStringIO.new
     Archive::Zip::Codec::TraditionalEncryption::Encrypt.open(
       encrypted_data,
       TraditionalEncryptionSpecs.password,

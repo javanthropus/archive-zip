@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + '/../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/support/zlib'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Zlib::ZWriter#checksum" do
   it "computes the ADLER32 checksum of zlib formatted data" do
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     closed_zw = Zlib::ZWriter.open(compressed_data, nil, 15) do |zw|
       zw.write(ZlibSpecs.test_data)
       zw.flush
@@ -16,7 +16,7 @@ describe "Zlib::ZWriter#checksum" do
   end
 
   it "computes the CRC32 checksum of gzip formatted data" do
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     closed_zw = Zlib::ZWriter.open(compressed_data, nil, 31) do |zw|
       zw.write(ZlibSpecs.test_data)
       zw.flush
@@ -27,7 +27,7 @@ describe "Zlib::ZWriter#checksum" do
   end
 
   it "does not compute a checksum for raw zlib data" do
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     closed_zw = Zlib::ZWriter.open(compressed_data, nil, -15) do |zw|
       zw.write(ZlibSpecs.test_data)
       zw.flush

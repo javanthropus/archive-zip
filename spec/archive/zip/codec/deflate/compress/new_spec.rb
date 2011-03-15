@@ -1,12 +1,12 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/deflate'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::Deflate::Compress.new" do
   it "returns a new instance" do
     c = Archive::Zip::Codec::Deflate::Compress.new(
-      StringIO.new, Zlib::DEFAULT_COMPRESSION
+      BinaryStringIO.new, Zlib::DEFAULT_COMPRESSION
     )
     c.class.should == Archive::Zip::Codec::Deflate::Compress
     c.close
@@ -14,7 +14,7 @@ describe "Archive::Zip::Codec::Deflate::Compress.new" do
 
   it "allows level to be set" do
     data = DeflateSpecs.test_data
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     c = Archive::Zip::Codec::Deflate::Compress.new(
       compressed_data, Zlib::DEFAULT_COMPRESSION
     )
@@ -23,7 +23,7 @@ describe "Archive::Zip::Codec::Deflate::Compress.new" do
 
     compressed_data.string.should == DeflateSpecs.compressed_data
 
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     c = Archive::Zip::Codec::Deflate::Compress.new(
       compressed_data, Zlib::NO_COMPRESSION
     )

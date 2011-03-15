@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + '/../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/support/zlib'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Zlib::ZWriter#tell" do
   it "returns the current position of the stream" do
-    sio = StringIO.new
+    sio = BinaryStringIO.new
     Zlib::ZWriter.open(sio) do |zw|
       zw.tell.should == 0
       zw.write('test1')

@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/null_encryption'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::NullEncryption::Encrypt#tell" do
   it "returns the current position of the stream" do
-    sio = StringIO.new
+    sio = BinaryStringIO.new
     Archive::Zip::Codec::NullEncryption::Encrypt.open(sio) do |e|
       e.tell.should == 0
       e.write('test1')

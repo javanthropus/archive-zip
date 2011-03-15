@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/null_encryption'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::NullEncryption::Encrypt#write" do
   it "calls the write method of the delegate" do
@@ -18,7 +18,7 @@ describe "Archive::Zip::Codec::NullEncryption::Encrypt#write" do
   end
 
   it "passes data through unmodified" do
-    encrypted_data = StringIO.new
+    encrypted_data = BinaryStringIO.new
     Archive::Zip::Codec::NullEncryption::Encrypt.open(encrypted_data) do |e|
       e.write(NullEncryptionSpecs.test_data)
     end

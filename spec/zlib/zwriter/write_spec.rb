@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/support/zlib'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Zlib::ZWriter#write" do
   it "calls the write method of the delegate" do
@@ -17,7 +17,7 @@ describe "Zlib::ZWriter#write" do
   end
 
   it "compresses data" do
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     Zlib::ZWriter.open(compressed_data) do |zw|
       zw.write(ZlibSpecs.test_data)
     end

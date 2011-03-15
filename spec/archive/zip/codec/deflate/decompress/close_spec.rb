@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/deflate'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::Deflate::Decompress#close" do
   it "closes the stream" do
-    c = Archive::Zip::Codec::Deflate::Decompress.new(StringIO.new)
+    c = Archive::Zip::Codec::Deflate::Decompress.new(BinaryStringIO.new)
     c.close
     c.closed?.should be_true
   end

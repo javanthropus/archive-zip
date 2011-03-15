@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/store'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::Store::Compress#rewind" do
   it "can rewind the stream when the delegate responds to rewind" do
-    sio = StringIO.new
+    sio = BinaryStringIO.new
     Archive::Zip::Codec::Store::Compress.open(sio) do |c|
       c.write('test')
       lambda { c.rewind }.should_not raise_error

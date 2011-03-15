@@ -1,6 +1,5 @@
-require 'stringio'
-
 require 'archive/support/ioextensions'
+require 'archive/support/binary_stringio'
 require 'archive/zip/codec/deflate'
 require 'archive/zip/codec/null_encryption'
 require 'archive/zip/codec/store'
@@ -394,7 +393,7 @@ module Archive; class Zip
     # extra field objects.  _bytes_ must be a String containing all of the extra
     # field data to be parsed.
     def self.parse_central_extra_fields(bytes)
-      StringIO.open(bytes) do |io|
+      BinaryStringIO.open(bytes) do |io|
         extra_fields = []
         while ! io.eof? do
           begin
@@ -414,7 +413,7 @@ module Archive; class Zip
     # extra field objects.  _bytes_ must be a String containing all of the extra
     # field data to be parsed.
     def self.parse_local_extra_fields(bytes)
-      StringIO.open(bytes) do |io|
+      BinaryStringIO.open(bytes) do |io|
         extra_fields = []
         while ! io.eof? do
           begin
@@ -1070,7 +1069,7 @@ module Archive; class Zip; module Entry
         )
       else
         if @file_path.nil? then
-          simulated_raw_data = StringIO.new
+          simulated_raw_data = BinaryStringIO.new
         else
           simulated_raw_data = ::File.new(@file_path, 'rb')
         end
@@ -1081,22 +1080,15 @@ module Archive; class Zip; module Entry
       @file_data
     end
 
-    # Sets the +file_data+ attribute of this object to _file_data_.  If
-    # _file_data_ is a String, it will be wrapped in a StringIO instance;
-    # otherwise, _file_data_ must be a readable, IO-like object.  _file_data_ is
-    # then wrapped inside an Archive::Zip::Codec::Store::Unstore instance before
-    # finally setting the +file_data+ attribute.
+    # Sets the +file_data+ attribute of this object to _file_data_.  _file_data_
+    # must be a readable, IO-like object.
     #
     # <b>NOTE:</b> As a side effect, the +file_path+ and +raw_data+ attributes
     # for this object will be set to +nil+.
     def file_data=(file_data)
       @file_path = nil
       self.raw_data = nil
-      if file_data.kind_of?(String)
-        @file_data = StringIO.new(file_data)
-      else
-        @file_data = file_data
-      end
+      @file_data = file_data
       # Ensure that the IO-like object can return CRC32 and data size
       # information so that it's possible to verify extraction later if desired.
       unless @file_data.respond_to?(:data_descriptor) then

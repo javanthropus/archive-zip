@@ -1,11 +1,11 @@
 require File.dirname(__FILE__) + '/../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/support/zlib'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Zlib::ZWriter#rewind" do
   it "can rewind the stream when the delegate responds to rewind" do
-    sio = StringIO.new
+    sio = BinaryStringIO.new
     Zlib::ZWriter.open(sio) do |zw|
       zw.write('test')
       lambda { zw.rewind }.should_not raise_error

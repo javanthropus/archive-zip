@@ -1,24 +1,24 @@
 require File.dirname(__FILE__) + '/../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/support/zlib'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Zlib::ZReader.open" do
   it "returns a new instance when run without a block" do
-    Zlib::ZReader.open(StringIO.new).class.should == Zlib::ZReader
+    Zlib::ZReader.open(BinaryStringIO.new).class.should == Zlib::ZReader
   end
 
   it "executes a block with a new instance as an argument" do
-    Zlib::ZReader.open(StringIO.new) { |zr| zr.class.should == Zlib::ZReader }
+    Zlib::ZReader.open(BinaryStringIO.new) { |zr| zr.class.should == Zlib::ZReader }
   end
 
   it "closes the object after executing a block" do
-    Zlib::ZReader.open(StringIO.new) { |zr| zr }.closed?.should.be_true
+    Zlib::ZReader.open(BinaryStringIO.new) { |zr| zr }.closed?.should.be_true
   end
 
   it "does not require window_bits to be set" do
     data = ZlibSpecs.test_data
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     Zlib::ZWriter.open(compressed_data) do |zw|
       zw.write(data)
     end
@@ -31,7 +31,7 @@ describe "Zlib::ZReader.open" do
 
   it "allows window_bits to be set" do
     data = ZlibSpecs.test_data
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     window_bits = -Zlib::MAX_WBITS
     Zlib::ZWriter.open(
       compressed_data, Zlib::DEFAULT_COMPRESSION, window_bits

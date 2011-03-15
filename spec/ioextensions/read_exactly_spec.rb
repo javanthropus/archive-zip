@@ -1,23 +1,23 @@
 require File.dirname(__FILE__) + '/../../spec_helper'
 require 'archive/support/ioextensions.rb'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "IOExtensions.read_exactly" do
   it "reads and returns length bytes from a given IO object" do
-    io = StringIO.new('This is test data')
+    io = BinaryStringIO.new('This is test data')
     IOExtensions.read_exactly(io, 4).should == 'This'
     IOExtensions.read_exactly(io, 13).should == ' is test data'
   end
 
   it "raises an error when too little data is available" do
-    io = StringIO.new('This is test data')
+    io = BinaryStringIO.new('This is test data')
     lambda do
       IOExtensions.read_exactly(io, 18)
     end.should raise_error(EOFError)
   end
 
   it "takes an optional buffer argument and fills it" do
-    io = StringIO.new('This is test data')
+    io = BinaryStringIO.new('This is test data')
     buffer = ''
     IOExtensions.read_exactly(io, 4, buffer)
     buffer.should == 'This'
@@ -27,7 +27,7 @@ describe "IOExtensions.read_exactly" do
   end
 
   it "empties the optional buffer before filling it" do
-    io = StringIO.new('This is test data')
+    io = BinaryStringIO.new('This is test data')
     buffer = ''
     IOExtensions.read_exactly(io, 4, buffer)
     buffer.should == 'This'
@@ -36,7 +36,7 @@ describe "IOExtensions.read_exactly" do
   end
 
   it "can read 0 bytes" do
-    io = StringIO.new('This is test data')
+    io = BinaryStringIO.new('This is test data')
     IOExtensions.read_exactly(io, 0).should == ''
   end
 

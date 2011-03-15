@@ -1,12 +1,12 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/traditional_encryption'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#close" do
   it "closes the stream" do
     d = Archive::Zip::Codec::TraditionalEncryption::Decrypt.new(
-      StringIO.new("\000" * 12),
+      BinaryStringIO.new("\000" * 12),
       TraditionalEncryptionSpecs.password,
       TraditionalEncryptionSpecs.mtime
     )

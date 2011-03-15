@@ -1,7 +1,7 @@
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/store'
-require 'stringio'
+require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::Store::Compress#write" do
   it "calls the write method of the delegate" do
@@ -18,7 +18,7 @@ describe "Archive::Zip::Codec::Store::Compress#write" do
   end
 
   it "passes data through unmodified" do
-    compressed_data = StringIO.new
+    compressed_data = BinaryStringIO.new
     Archive::Zip::Codec::Store::Compress.open(compressed_data) do |c|
       c.write(StoreSpecs.test_data)
     end
