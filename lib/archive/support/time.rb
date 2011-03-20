@@ -1,3 +1,4 @@
+# encoding: UTF-8
 class Time
   # Returns a DOSTime representing this time object as a DOS date-time
   # structure.  Times are bracketed by the limits of the ability of the DOS

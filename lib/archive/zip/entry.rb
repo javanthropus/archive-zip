@@ -1,3 +1,4 @@
+# encoding: UTF-8
 require 'archive/support/ioextensions'
 require 'archive/support/binary_stringio'
 require 'archive/zip/codec/deflate'

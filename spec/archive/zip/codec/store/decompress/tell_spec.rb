@@ -1,3 +1,4 @@
+# encoding: UTF-8
 require File.dirname(__FILE__) + '/../../../../../../spec_helper'
 require File.dirname(__FILE__) + '/../fixtures/classes'
 require 'archive/zip/codec/store'

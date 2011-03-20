@@ -1,3 +1,4 @@
+# encoding: UTF-8
 require 'archive/support/zlib'
 require 'archive/zip/codec'
 require 'archive/zip/data_descriptor'

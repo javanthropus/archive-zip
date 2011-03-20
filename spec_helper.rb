@@ -1,3 +1,4 @@
+# encoding: UTF-8
 # Add the lib directory for this module to the search path.
 $: << File.join(File.dirname(__FILE__), 'lib')
 

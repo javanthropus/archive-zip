@@ -1,3 +1,4 @@
+# encoding: UTF-8
 require 'stringio'
 
 # This class is a version of StringIO that always uses the binary encoding on

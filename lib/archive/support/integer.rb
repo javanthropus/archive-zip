@@ -1,3 +1,4 @@
+# encoding: UTF-8
 class Integer
   unless public_method_defined?('ord') then
     # Returns the int itself.

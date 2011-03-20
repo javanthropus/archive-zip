@@ -1,3 +1,4 @@
+# encoding: UTF-8
 require 'archive/support/io-like'
 
 # IOWindow represents an IO object which wraps another one allowing read and/or
