@@ -1,189 +1,202 @@
 # encoding: UTF-8
 
-require 'rake/clean'
-require 'rake/gempackagetask'
-require 'rake/rdoctask'
-require 'rake/testtask'
 require 'rubygems'
+gem 'rdoc'
 
-# The Unix name of this project.
-PKG_NAME    = 'archive-zip'
+require 'rubygems/package_task'
+require 'rake/clean'
+require 'rdoc/task'
 
-# The current version of this gem.  Increment for each new release.
-PKG_VERSION = '0.3.0'
+# The path to the version.rb file and a string to eval to find the version.
+VERSION_RB = 'lib/archive/zip/version.rb'
+VERSION_REF = 'Archive::Zip::VERSION'
 
-# The location where documentation should be created.
-# NOTE: This MUST have a slash on the end or document publishing will not work
-# correctly.
-LOCAL_DOCS  = 'doc/'
+# Load the gemspec file for this project.
+GEMSPEC = 'archive-zip.gemspec'
+SPEC = eval(File.read(GEMSPEC), nil, GEMSPEC)
 
-# The location for published documents to be copied.
-remote_user = ENV['REMOTE_USER'].nil? ? '' : ENV['REMOTE_USER'] + '@'
-remote_host = ENV['REMOTE_HOST'].nil? ?
-  'rubyforge.org:' :
-  ENV['REMOTE_HOST'] + ':'
-remote_path = ENV['REMOTE_PATH'].nil? ?
-  "/var/www/gforge-projects/#{PKG_NAME}" :
-  ENV['REMOTE_PATH']
-remote_path += '/' unless remote_path[-1, 1] == '/'
-REMOTE_DOCS = "#{remote_user}#{remote_host}#{remote_path}"
+# Returns the value of the VERSION environment variable as a Gem::Version object
+# assuming it is set and a valid Gem version string.  Otherwise, raises an
+# exception.
+def get_version_argument
+  version = ENV['VERSION']
+  if version.nil? || version.empty?
+    raise "No version specified: Add VERSION=... to the command line"
+  end
+  begin
+    Gem::Version.create(version.dup)
+  rescue ArgumentError
+    raise "Invalid version specified in `VERSION=#{version}'"
+  end
+end
 
-# The files which actually do something.
-LIB_FILES   = FileList.new(
-  'lib/**/*.rb'
-)
+# Performs an in place, per line edit of the file indicated by _path_ by calling
+# the sub method on each line and passing _pattern_, _replacement_, and _b_ as
+# arguments.
+def file_sub(path, pattern, replacement = nil, &b)
+  tmp_path = "#{path}.tmp"
+  File.open(path) do |infile|
+    File.open(tmp_path, 'w') do |outfile|
+      infile.each do |line|
+        outfile.write(line.sub(pattern, replacement, &b))
+      end
+    end
+  end
+  File.rename(tmp_path, path)
+end
 
-# Files used to run tests.
-TEST_FILES  = FileList.new(
-  'test/**/*.rb'
-)
+# Updates the version string in the gemspec file and a version.rb file it to the
+# string in _version_.
+def set_version(version)
+  file_sub(GEMSPEC, /(\.version\s*=\s*).*/, "\\1\"#{version}\"")
+  file_sub(VERSION_RB, /^(\s*VERSION\s*=\s*).*/, "\\1\"#{version}\"")
+end
 
-# Spec files used with mspec and their support files.
-SPEC_FILES  = FileList.new(
-  'default.mspec',
-  'spec_helper.rb',
-  'spec/**/*'
-)
+# A dynamically generated list of files that should match the manifest (the
+# combined contents of SPEC.files and SPEC.test_files).  The idea is for this
+# list to contain all project files except for those that have been explicitly
+# excluded.  This list will be compared with the manifest from the SPEC in order
+# to help catch the addition or removal of files to or from the project that
+# have not been accounted for either by an exclusion here or an inclusion in the
+# SPEC manifest.
+#
+# NOTE:
+# It is critical that the manifest is *not* automatically generated via globbing
+# and the like; otherwise, this will yield a simple comparison between
+# redundantly generated lists of files that probably will not protect the
+# project from the unintentional inclusion or exclusion of files in the
+# distribution.
+PKG_FILES = FileList.new('**/*', '**/.[^.][^.]*') do |files|
+  # Exclude the gemspec file.
+  files.exclude('*.gemspec')
+  # Exclude anything that doesn't exist and directories.
+  files.exclude {|file| ! File.exist?(file) || File.directory?(file)}
+  # Exclude Vim swap files.
+  files.exclude('**/.*.sw?')
+  # Exclude Git administrative files and directories.
+  files.exclude(%r{(^|[/\\])\.git(ignore|modules)?([/\\]|$)})
 
-# Files to be included for documentation purposes only.
-DOC_FILES   = FileList.new(
-  'CONTRIBUTORS',
-  'HACKING',
-  'LICENSE',
-  'GPL',
-  'LEGAL',
-  'NEWS',
-  'README'
-)
-
-# Files which do not match another category.
-MISC_FILES  = FileList.new(
-  'MANIFEST'
-)
-
-# All the files which are to be included within the package.
-PKG_FILES   = LIB_FILES + DOC_FILES + MISC_FILES
-
-# Files used by the rdoc task.
-RDOC_FILES  = LIB_FILES + DOC_FILES
+  # Exclude the top level pkg, doc, and examples directories and their contents.
+  files.exclude(%r{^(pkg|doc|examples)([/\\]|$)})
+end
 
 # Make sure that :clean and :clobber will not whack the repository files.
 CLEAN.exclude('.git/**')
 # Vim swap files are fair game for clean up.
 CLEAN.include('**/.*.sw?')
 
-spec = Gem::Specification.new do |s|
-  s.name          = PKG_NAME
-  s.version       = PKG_VERSION
-  s.platform      = Gem::Platform::RUBY
-  s.author        = 'Jeremy Bopp'
-  s.email         = 'jeremy at bopp dot net'
-  s.summary       = 'Simple, extensible, pure Ruby ZIP archive support.'
-  s.description   = <<-EOF
-Archive::Zip provides a simple Ruby-esque interface to creating, extracting, and
-updating ZIP archives.  This implementation is 100% Ruby and loosely modeled on
-the archive creation and extraction capabilities of InfoZip's zip and unzip
-tools.
-  EOF
-  s.rubyforge_project = PKG_NAME
-  s.homepage      = "http://#{PKG_NAME}.rubyforge.org"
-  s.files         = PKG_FILES
-  s.required_ruby_version = '>= 1.8.1'
-  s.add_dependency('io-like', '>= 0.3.0')
+desc 'Alias for build:gem'
+task :build => 'build:gem'
 
-  s.has_rdoc      = true
-  s.extra_rdoc_files = DOC_FILES
-  s.rdoc_options  << '--title' << 'Archive::Zip Documentation' <<
-                     '--charset' << 'utf-8' <<
-                     '--line-numbers' << '--inline-source'
+# Build related tasks.
+namespace :build do
+  # Create the gem and package tasks.
+  Gem::PackageTask.new(SPEC).define
+
+  # Ensure that the manifest is consulted after building the gem.  Any
+  # generated/compiled files should be available at that time.
+  task :gem => :check_manifest
+
+  desc 'Verify the manifest'
+  task :check_manifest do
+    manifest_files = (SPEC.files + SPEC.test_files).sort.uniq
+    pkg_files = PKG_FILES.sort.uniq
+    if manifest_files != pkg_files then
+      common_files = manifest_files & pkg_files
+      manifest_files -= common_files
+      pkg_files -= common_files
+      message = ["The manifest does not match the automatic file list."]
+      unless manifest_files.empty? then
+        message << "  Extraneous files:\n    " + manifest_files.join("\n    ")
+      end
+      unless pkg_files.empty?
+        message << "  Missing files:\n    " + pkg_files.join("\n    ")
+      end
+      raise message.join("\n")
+    end
+  end
 end
 
-# Ensure that the packaging tasks which will be created verify the manifest
-# first.
-task :gem => :check_manifest
-task :package => :check_manifest
-
-# Create the gem and package tasks.
-Rake::GemPackageTask.new(spec) do |t|
-  t.need_tar_gz = true
-end
+# Ensure that the clobber task also clobbers package files.
+task :clobber => 'build:clobber_package'
 
 # Create the rdoc task.
-Rake::RDocTask.new do |rdoc|
-  rdoc.rdoc_dir   = LOCAL_DOCS
+RDoc::Task.new do |rdoc|
+  rdoc.rdoc_dir   = 'doc'
   rdoc.title      = 'Archive::Zip Documentation'
-  rdoc.rdoc_files = RDOC_FILES
+  rdoc.rdoc_files = SPEC.files - SPEC.test_files
   rdoc.main       = 'README'
-
-  # Set miscellaneous options to settings I like.
-  rdoc.options    << '--line-numbers' << '--inline-source'
-  rdoc.options    << '--charset' << 'utf-8'
-
-  # Use the allison template if available.
-  allison_path    = `allison --path 2>/dev/null`.chomp
-  rdoc.template   = allison_path unless allison_path.empty?
 end
 
-desc 'Tag the current HEAD with the current version string'
-task :tag do
-  sh "git tag -s -m 'Release v#{PKG_VERSION}' v#{PKG_VERSION}"
-end
+# Gem related tasks.
+namespace :gem do
+  desc 'Alias for build:gem'
+  task :build => 'build:gem'
 
-desc 'Create the CHANGELOG file'
-task :changelog do
-  File.open('CHANGELOG', 'w') do |changelog|
-    IO.popen('git log') do |git|
-      git.each do |line|
-        # Protect email addresses from spammers.
-        line.gsub!(
-          /([a-z0-9!\#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!\#$%&'*+\/=?^_`{|}~-]+)*)@((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)/i
-        ) { |match| "#{$1} at #{$2.gsub('.', ' dot ')}" }
-        changelog.puts(line)
-      end
-    end
+  desc 'Publish the gemfile'
+  task :publish => ['version:check', :test, 'repo:tag', :build] do
+    sh "gem push pkg/#{SPEC.name}-#{SPEC.version}*.gem"
   end
 end
 
-desc 'Create/Update the MANIFEST file'
-task :manifest do
-  File.open('MANIFEST', 'w') { |f| f.puts(PKG_FILES.sort) }
-end
-
-desc 'Verify the manifest'
-task :check_manifest do
-  unless File.exist?('MANIFEST') then
-    raise "File not found - `MANIFEST': Execute the manifest task"
-  end
-  manifest_files = File.readlines('MANIFEST').map { |line| line.chomp }.uniq
-  pkg_files = PKG_FILES.uniq
-  if manifest_files.sort != pkg_files.sort then
-    common_files = manifest_files & pkg_files
-    manifest_files.delete_if { |file| common_files.include?(file) }
-    pkg_files.delete_if { |file| common_files.include?(file) }
-    $stderr.puts('The manifest does not match the package file list')
-    unless manifest_files.empty? then
-      $stderr.puts("  Extraneous files:\n    " + manifest_files.join("\n    "))
-    end
-    unless pkg_files.empty?
-      $stderr.puts("  Missing files:\n    " + pkg_files.join("\n    "))
-    end
-    exit 1
-  end
-end
-
-desc 'Publish the project documentation'
-task :publish => [:rdoc] do
-  sh "rsync -r --delete \"#{LOCAL_DOCS}\" \"#{REMOTE_DOCS}\""
-end
-
-# Create the test task.
 desc 'Run tests'
 task :test do
   sh "mspec"
 end
 
-# Clean up to a pristine state.
-task :clobber => [:clobber_package, :clobber_rdoc]
+# Version string management tasks.
+namespace :version do
+  desc 'Set the version for the project to a specified version'
+  task :set do
+    set_version(get_version_argument)
+  end
 
-desc 'An alias for the gem target'
-task :default => [:gem]
+  desc 'Set the version for the project back to 0.0.0'
+  task :reset do
+    set_version('0.0.0')
+  end
+
+  desc 'Checks that all version strings are correctly set'
+  task :check do
+    version = get_version_argument
+    if version != SPEC.version
+      raise "The given version `#{version}' does not match the gemspec version `#{SPEC.version}'"
+    end
+
+    begin
+      load VERSION_RB
+      internal_version = Gem::Version.create(eval(VERSION_REF))
+      if version != internal_version
+        raise "The given version `#{version}' does not match the version.rb version `#{internal_version}'"
+      end
+    rescue ArgumentError
+      raise "Invalid version specified in `#{VERSION_RB}'"
+    end
+
+    begin
+      File.open('NEWS') do |news|
+        unless news.lines.any? {|l| l =~ /^== v#{Regexp.escape(version.to_s)} /}
+          raise "The NEWS file does not mention version `#{version}'"
+        end
+      end
+    rescue Errno::ENOENT
+      raise 'No NEWS file found'
+    end
+  end
+end
+
+# Repository and workspace management tasks.
+namespace :repo do
+  desc 'Tag the current HEAD with the version string'
+  task :tag => :check_workspace do
+    version = get_version_argument
+    sh "git tag -s -m 'Release v#{version}' v#{version}"
+  end
+
+  desc 'Ensure the workspace is fully committed and clean'
+  task :check_workspace do
+    unless `git status --untracked-files=all --porcelain`.empty?
+      raise 'Workspace has been modified.  Commit pending changes and try again.'
+    end
+  end
+end
