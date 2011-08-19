@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 class DeflateSpecs
   def self.compressed_data_nocomp(&b)
     File.open(

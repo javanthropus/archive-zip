@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 class NullEncryptionSpecs
   class << self
     def test_data

@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 require 'zlib'
 
 require 'archive/support/io-like'

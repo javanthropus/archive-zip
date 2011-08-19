@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 module Archive; class Zip;
   # Archive::Zip::Error is the base class of all archive-related errors raised
   # by the Archive::Zip library.

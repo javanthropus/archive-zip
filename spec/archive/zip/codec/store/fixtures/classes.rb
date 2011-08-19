@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 class StoreSpecs
   class << self
     def test_data

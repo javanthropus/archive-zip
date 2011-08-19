@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 module Archive; class Zip
   module ExtraField
     # A Hash used to map extra field header identifiers to extra field classes.

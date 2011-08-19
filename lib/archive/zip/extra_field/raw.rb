@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 module Archive; class Zip; module ExtraField
   # Archive::Zip::Entry::ExtraField::Raw represents an unknown extra field.  It
   # is used to store extra fields the Archive::Zip library does not directly

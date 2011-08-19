@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 require 'archive/zip/error'
 
 module Archive; class Zip; module ExtraField

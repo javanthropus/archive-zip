@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 module Archive; class Zip
   # Archive::Zip::Codec is a factory class for generating codec object instances
   # based on the compression method and general purpose flag fields of ZIP

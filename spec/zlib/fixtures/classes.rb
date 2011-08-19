@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 class ZlibSpecs
   def self.compressed_data
     File.open(

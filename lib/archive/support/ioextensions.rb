@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 # IOExtensions provides convenience wrappers for certain IO functionality.
 module IOExtensions
   # Reads and returns exactly _length_ bytes from _io_ using the read method on

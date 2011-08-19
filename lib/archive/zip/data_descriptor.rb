@@ -1,4 +1,5 @@
 # encoding: UTF-8
+
 module Archive; class Zip
   # Archive::Zip::DataDescriptor is a convenience class which bundles important
   # information concerning the compressed data in a ZIP archive entry and allows
