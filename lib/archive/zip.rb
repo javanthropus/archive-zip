@@ -54,7 +54,7 @@ module Archive # :nodoc:
     # IO-like object which will be left open after the completion of this
     # method.
     #
-    # <b>NOTE:</b> No attempt it made to prevent adding multiple entries with
+    # <b>NOTE:</b> No attempt is made to prevent adding multiple entries with
     # the same archive path.
     #
     # See the instance method #archive for more information about _paths_ and
@@ -214,7 +214,7 @@ module Archive # :nodoc:
 
     # Adds _entry_ into a writable ZIP archive.
     #
-    # <b>NOTE:</b> No attempt it made to prevent adding multiple entries with
+    # <b>NOTE:</b> No attempt is made to prevent adding multiple entries with
     # the same archive path.
     #
     # Raises Archive::Zip::IOError if called on a non-writable archive or after
@@ -288,7 +288,7 @@ module Archive # :nodoc:
     # Any other options which are supported by Archive::Zip::Entry.from_file are
     # also supported.
     #
-    # <b>NOTE:</b> No attempt it made to prevent adding multiple entries with
+    # <b>NOTE:</b> No attempt is made to prevent adding multiple entries with
     # the same archive path.
     #
     # Raises Archive::Zip::IOError if called on a non-writable archive or after
