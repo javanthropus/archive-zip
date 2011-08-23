@@ -1,0 +1,5 @@
+= Future work items (in no particular order):
+
+* Add test cases for all classes.
+* Add support for using non-seekable IO objects as archive sources.
+* Add support for 0x5855 and 0x7855 extra fields.
