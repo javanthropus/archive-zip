@@ -83,41 +83,23 @@ be more easily accepted if they are consistent with the rest of the code.
                            code
 
 
-== Generating Patches
+== Contributing Code
 
-Patches should usually be generated against the <em>HEAD</em> revision of the
-<em>master</em> branch.  When generating patches, please try to implement only
-a single feature or bug fix per patch.  Documentation describing a patch should
-be included along with the patch so that the maintainer can more easily
-determine whether or not a patch is acceptable.  Patches lacking the necessary
-documentation will be ignored.
+Making a contribution is pretty simple.  Fork the project on Github
+(http://github.com/javanthropus/archive-zip), make your changes, and submit a
+pull request.  Requests that meet the following criteria will be the most
+readily accepted:
 
-Patches will be much more readily accepted if test cases are provided which
-verify correct operation.  Such test cases should be provided within the patch
-rather than as a separate patch.  Proper documentation, especially for
-user-visible APIs, is highly prized; providing accurate and detailed
-documentation, often in the form of rubydocs, throughout new code contributions
-will also increase the desirability of a patch.
+1. Each pull request should target an individual issue and should introduce
+   relatively few commits.
+2. Individual commits need to be small, easily digestible units.
+3. Good descriptions of the changes introduced should be included in each commit
+   message.
+4. Interdependencies on existing pull requests need to be noted in the pull
+   request.
+5. New test cases are a major plus.
+6. Documentation for new classes, methods, etc. is also a win.
+7. The coding style of the project should be respected.
 
-If a series of patches is generated which cannot be applied individually, make
-sure to mention the dependency relationships in whatever medium is being used
-to distribute the patches.  For instance, if a bug is discovered while
-implementing a new feature, create a patch which fixes the bug followed by a
-separate patch adding the feature.  If the feature patch requires the bug fix
-patch in order to work, note that dependency in the comments for the feature
-patch by somehow referencing the bug fix patch.
-
-The patch generation process in general:
-  $ git clone git://rubyforge.org/archive-zip.git # Clone the repo and check out
-                                                  # the master branch.
-  $ cd archive-zip                                # Enter the workspace.
-  (make and test changes)
-  $ git add file1 file2 ..                        # Add new/modified files.
-  $ git commit                                    # Commit changes.
-  $ git format-patch -C HEAD^                     # Create a patch for the last
-                                                  # commit.
-
-Repeat as necessary until all patches are generated.  Then either attach them to
-1 or more email messages addressed to the maintainer or attach them to tickets
-in the issue tracker for the project.  Remember to include a brief description
-of the patch and its dependencies, if any.
+In other words, the less work necessary to bring your changes into the project,
+the faster you can expect them to be pulled.
