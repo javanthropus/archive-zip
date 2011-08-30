@@ -6,6 +6,31 @@ detailed information is available in the rest of the documentation.
 <b>NOTE:</b> Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+== v0.4.0 (2011/??/??)
+
+=== Features
+
+* Added Ruby 1.9 support.
+* Simplified arguments for Archive::Zip.new.
+  * Archives cannot be directly opened for modification.
+  * Archive::Zip.archive can still emulate modifying an archive in place.
+* Added a bunch of tests (many more still needed).
+* Updated and simplified rake tasks.
+* Created a standalone gemspec file.
+
+=== Fixes
+
+* Fixed a potential data loss bug in Zlib::ZReader.
+* Archives larger than the maximum Fixnum for the platform don't falsely raise a
+  "non-integer windows position given" error.
+
+=== Notes
+
+* Broke backward compatibility for Archive::Zip.new.
+  * Wrapper class methods continue to work as before.
+* Broke backward compatibility for Archive::Zip::ExtraField.
+  * Allows separate handling of extra fields in central and local records.
+
 == v0.3.0 (2009/01/23)
 
 * Made a significant performance improvement for the extraction of compressed
