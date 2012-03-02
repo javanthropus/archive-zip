@@ -6,3 +6,6 @@ pkg/*
 
 # The documentation directory
 doc/*
+
+# Rubinius compiled files
+*.rbc
