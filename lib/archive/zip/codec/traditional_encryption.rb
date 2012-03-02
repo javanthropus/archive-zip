@@ -157,14 +157,13 @@ module Archive; class Zip; module Codec
 
         # Create and encrypt a 12 byte header to protect the encrypted file data
         # from attack.  The first 10 bytes are random, and the last 2 bytes are
-        # the low order word of the last modified time of the entry in DOS
-        # format.
+        # the low order word in little endian byte order of the last modified
+        # time of the entry in DOS format.
         header = ''
         10.times do
           header << rand(256).chr
         end
-        time = mtime.to_dos_time.to_i
-        header << (time & 0xff).chr << ((time >> 8) & 0xff).chr
+        header << mtime.to_dos_time.pack[0, 2]
 
         # Take care to ensure that all bytes in the header are written.
         while header.size > 0 do

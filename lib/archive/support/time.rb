@@ -59,7 +59,7 @@ module Archive
     # Returns -1 if _other_ is a time earlier than this one, 0 if _other_ is the
     # same time, and 1 if _other_ is a later time.
     def cmp(other)
-      @dos_time <=> other.dos_time
+      to_i <=> other.to_i
     end
     alias :<=> :cmp
 
@@ -69,8 +69,14 @@ module Archive
       @dos_time
     end
 
-    # Returns a Time instance which is equivalent to the time represented by this
-    # object.
+    # Returns the 32 bit integer that backs this object packed into a String in
+    # little endian format.  This is suitable for use with #new.
+    def pack
+      [to_i].pack('V')
+    end
+
+    # Returns a Time instance which is equivalent to the time represented by
+    # this object.
     def to_time
       second = ((0b11111         & @dos_time)      ) * 2
       minute = ((0b111111  << 5  & @dos_time) >>  5)
@@ -80,10 +86,5 @@ module Archive
       year   = ((0b1111111 << 25 & @dos_time) >> 25) + 1980
       return Time.local(year, month, day, hour, minute, second)
     end
-
-    protected
-
-    # Used by _cmp_ to read another time stored in another DOSTime instance.
-    attr_reader :dos_time # :nodoc:
   end
 end
