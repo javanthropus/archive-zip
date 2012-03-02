@@ -7,7 +7,7 @@ class TraditionalEncryptionSpecs
     end
 
     def mtime
-      Time.at(0)
+      Time.local(1979, 12, 31, 18, 0, 0)
     end
 
     def encrypted_data
