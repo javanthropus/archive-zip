@@ -58,13 +58,9 @@ module Archive; class Zip; module Codec
         # flipped before processing.  The new CRC value must have its bits
         # flipped as well for storage and later use.  This applies to the
         # handling of @key0 and @key2.
-        #
-        # NOTE: XOR'ing with 0xffffffff is used instead of simple bit negation
-        # in case this is run on a platform with a native integer size of
-        # something other than 32 bits.
-        @key0 = Zlib.crc32(char, @key0 ^ 0xffffffff) ^ 0xffffffff
+        @key0 = ~Zlib.crc32(char, ~@key0)
         @key1 = ((@key1 + (@key0 & 0xff)) * 134775813 + 1) & 0xffffffff
-        @key2 = Zlib.crc32((@key1 >> 24).chr, @key2 ^ 0xffffffff) ^ 0xffffffff
+        @key2 = ~Zlib.crc32((@key1 >> 24).chr, ~@key2)
         nil
       end
 
