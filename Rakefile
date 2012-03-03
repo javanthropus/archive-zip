@@ -75,6 +75,8 @@ PKG_FILES = FileList.new('**/*', '**/.[^.][^.]*') do |files|
   files.exclude('**/.*.sw?')
   # Exclude Git administrative files and directories.
   files.exclude(%r{(^|[/\\])\.git(ignore|modules)?([/\\]|$)})
+  # Exclude Rubunius compiled Ruby files.
+  files.exclude('**/*.rbc')
 
   # Exclude the top level pkg, doc, and examples directories and their contents.
   files.exclude(%r{^(pkg|doc|examples)([/\\]|$)})
