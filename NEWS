@@ -6,6 +6,17 @@ detailed information is available in the rest of the documentation.
 <b>NOTE:</b> Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+== v0.5.0 (2012/03/01)
+
+=== Fixes
+
+* Avoid timezone discrepancies in encryption tests.
+* Moved the DOSTime class to the Archive namespace (Chris Schneider).
+
+=== Notes
+
+* Broke backward compatibility of the DOSTime class.
+
 == v0.4.0 (2011/08/29)
 
 === Features
