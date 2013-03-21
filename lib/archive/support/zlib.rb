@@ -11,11 +11,11 @@ module Zlib # :nodoc:
 
   # A deflate strategy which limits match distances to 1, also known as
   # run-length encoding.
-  RLE = 3
+  RLE = 3 unless defined?(Zlib::RLE)
 
   # A deflate strategy which does not use dynamic Huffman codes, allowing for a
   # simpler decoder to be used to inflate.
-  FIXED = 4
+  FIXED = 4 unless defined?(Zlib::FIXED)
 
   # Zlib::ZWriter is a writable, IO-like object (includes IO::Like) which wraps
   # other writable, IO-like objects in order to facilitate writing data to those
