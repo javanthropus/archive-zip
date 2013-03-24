@@ -88,7 +88,7 @@ module Zlib # :nodoc:
     #
     # Finally, negating the base value of _window_bits_ indicates that a raw
     # zlib stream is to be produced without any header or trailer.  In this case
-    # the checksum method of this object will always return <tt>1</tt>.  This is
+    # the checksum method of this object will always return <tt>nil</tt>.  This is
     # for use with other formats that use the deflate compressed data format
     # such as zip.  Such formats should provide their own check values.
     #
@@ -164,6 +164,7 @@ module Zlib # :nodoc:
     # processed, so calling #flush prior to calling this method may be necessary
     # for an accurate checksum.
     def checksum
+      return nil if @window_bits < 0
       @deflater.closed? ? @checksum : @deflater.adler
     end
 
@@ -315,7 +316,7 @@ module Zlib # :nodoc:
     #
     # Finally, negating the base value of _window_bits_ indicates that a raw
     # zlib stream is expected without any header or trailer.  In this case the
-    # checksum method of this object will always return <tt>1</tt>.  This is for
+    # checksum method of this object will always return <tt>nil</tt>.  This is for
     # use with other formats that use the deflate compressed data format such as
     # zip.  Such formats should provide their own check values.
     #
@@ -375,6 +376,7 @@ module Zlib # :nodoc:
     # processed any time the internal buffer is filled, so this checksum is only
     # accurate if all data has been read out of this object.
     def checksum
+      return nil if @window_bits < 0
       @inflater.closed? ? @checksum : @inflater.adler
     end
 

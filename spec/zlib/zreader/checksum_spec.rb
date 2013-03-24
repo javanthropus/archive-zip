@@ -31,10 +31,10 @@ describe "Zlib::ZReader#checksum" do
     closed_zr = ZlibSpecs.compressed_data_raw do |f|
       Zlib::ZReader.open(f, -15) do |zr|
         zr.read
-        zr.checksum.should == 1
+        zr.checksum.should == nil
         zr
       end
     end
-    closed_zr.checksum.should == 1
+    closed_zr.checksum.should == nil
   end
 end
