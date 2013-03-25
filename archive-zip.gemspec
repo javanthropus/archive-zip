@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = "archive-zip"
-  s.version     = "0.6.0"
+  s.version     = "0.0.0"
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["Jeremy Bopp"]
   s.email       = ["jeremy@bopp.net"]
