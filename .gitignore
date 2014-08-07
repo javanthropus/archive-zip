@@ -2,11 +2,19 @@
 .*.sw?
 
 # The gem package directory
-pkg/*
+/pkg/*
 
 # The documentation directory
-doc/*
+/doc/*
 
 # Rubinius compiled files
 *.rbc
 .rbx/*
+
+# Bundler support files
+/Gemfile.lock
+/.bundle/
+/vendor/bundle/
+
+# Yardoc support files
+/.yardoc/

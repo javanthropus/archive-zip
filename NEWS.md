@@ -1,14 +1,14 @@
-= News and Notifications by Version
+# News and Notifications by Version
 
 This file lists noteworthy changes which may affect users of this project.  More
 detailed information is available in the rest of the documentation.
 
-<b>NOTE:</b> Date stamps in the following entries are in YYYY/MM/DD format.
+**NOTE:** Date stamps in the following entries are in YYYY/MM/DD format.
 
 
-== v0.6.0 (2013/03/24)
+## v0.6.0 (2013/03/24)
 
-=== Fixes
+### Fixes
 
 * Only define Zlib constants when they are not already defined.
   * Fixes constant redefinition warnings under MRI 2.0.0-p0.
@@ -18,27 +18,27 @@ detailed information is available in the rest of the documentation.
     #adler methods appear inconsistent for raw streams and really aren't
     necessary in this case anyway.
 
-=== Notes
+### Notes
 
 * Broke backward compatibility with the behavior of Zlib::ZWriter#checksum and
   Zlib::ZReader#checksum when working with raw streams.
   * This should not affect direct users of Archive::Zip because the checksum
     methods of those classes are never used.
 
-== v0.5.0 (2012/03/01)
+## v0.5.0 (2012/03/01)
 
-=== Fixes
+### Fixes
 
 * Avoid timezone discrepancies in encryption tests.
 * Moved the DOSTime class to the Archive namespace (Chris Schneider).
 
-=== Notes
+### Notes
 
 * Broke backward compatibility of the DOSTime class.
 
-== v0.4.0 (2011/08/29)
+## v0.4.0 (2011/08/29)
 
-=== Features
+### Features
 
 * Added Ruby 1.9 support.
 * Simplified arguments for Archive::Zip.new.
@@ -48,27 +48,27 @@ detailed information is available in the rest of the documentation.
 * Updated and simplified rake tasks.
 * Created a standalone gemspec file.
 
-=== Fixes
+### Fixes
 
 * Fixed a potential data loss bug in Zlib::ZReader.
 * Archives larger than the maximum Fixnum for the platform don't falsely raise a
   "non-integer windows position given" error.
 
-=== Notes
+### Notes
 
 * Broke backward compatibility for Archive::Zip.new.
   * Wrapper class methods continue to work as before.
 * Broke backward compatibility for Archive::Zip::ExtraField.
   * Allows separate handling of extra fields in central and local records.
 
-== v0.3.0 (2009/01/23)
+## v0.3.0 (2009/01/23)
 
 * Made a significant performance improvement for the extraction of compressed
   entries for performance on par with InfoZIP's unzip.  Parsing archives with
   many entries is still a bit subpar however.
 
 
-== v0.2.0 (2008/08/06)
+## v0.2.0 (2008/08/06)
 
 * Traditional (weak) encryption is now supported.
 * Adding new encryption methods should be easier now.
@@ -78,14 +78,14 @@ detailed information is available in the rest of the documentation.
   the _codec_ attribute to access the compression codec of the entry.
 
 
-== v0.1.1 (2008/07/11)
+## v0.1.1 (2008/07/11)
 
 * Archive files are now closed when the Archive::Zip object is closed even when
   no changes were made to the archive, a problem on Windows if you want to
   delete the archive after extracting it within the same script.
 
 
-== v0.1.0 (2008/07/10)
+## v0.1.0 (2008/07/10)
 
 * Initial release.
 * Archive creation and extraction is supported with only a few lines of code.

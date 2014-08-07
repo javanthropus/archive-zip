@@ -1,36 +1,37 @@
 # encoding: UTF-8
 
 Gem::Specification.new do |s|
-  s.name        = "archive-zip"
-  s.version     = "0.0.0"
+  s.name        = 'archive-zip'
+  s.version     = '0.0.0'
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["Jeremy Bopp"]
-  s.email       = ["jeremy@bopp.net"]
-  s.homepage    = "http://github.com/javanthropus/archive-zip"
-  s.summary     = "Simple, extensible, pure Ruby ZIP archive support."
+  s.authors     = ['Jeremy Bopp']
+  s.email       = ['jeremy@bopp.net']
+  s.homepage    = 'http://github.com/javanthropus/archive-zip'
+  s.summary     = 'Simple, extensible, pure Ruby ZIP archive support.'
   s.description = <<-EOD
 Archive::Zip provides a simple Ruby-esque interface to creating, extracting, and
 updating ZIP archives.  This implementation is 100% Ruby and loosely modeled on
 the archive creation and extraction capabilities of InfoZip's zip and unzip
 tools.
   EOD
-  s.rubyforge_project = "archive-zip"
+  s.rubyforge_project = 'archive-zip'
 
-  s.add_dependency("io-like", ">= 0.3.0")
+  s.add_dependency('io-like', '~> 0.3.0')
 
-  s.add_development_dependency("rake", ">= 0.9.0")
-  s.add_development_dependency("mspec", ">= 1.5.12")
+  s.add_development_dependency('rake', '~> 10.3.2')
+  s.add_development_dependency('mspec', '~> 1.5.21')
+  s.add_development_dependency('yard', '~> 0.8.7.4')
+  s.add_development_dependency('yard-redcarpet-ext', '~> 0.0.3')
+  s.add_development_dependency('redcarpet', '~> 3.1.2')
+  s.add_development_dependency('github-markup', '~> 1.2.1')
+  s.add_development_dependency('pry')
 
   s.files        = %w(
-    CONTRIBUTORS
-    GPL
-    HACKING
-    LEGAL
+    .yardopts
     LICENSE
-    NEWS
+    NEWS.md
     Rakefile
-    README
-    TODO
+    README.md
     lib/archive/zip/extra_field.rb
     lib/archive/zip/codec.rb
     lib/archive/zip/extra_field/raw.rb
@@ -158,5 +159,5 @@ tools.
     spec/archive/zip/codec/traditional_encryption/decrypt/seek_spec.rb
   )
 
-  s.require_path = "lib"
+  s.require_path = 'lib'
 end
