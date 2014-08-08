@@ -726,7 +726,7 @@ module Archive # :nodoc:
           @entries.length,
           central_directory_length,
           central_directory_offset,
-          comment.length
+          comment.bytesize
         ].pack('vvvvVVv')
       )
       bytes_written += io.write(comment)

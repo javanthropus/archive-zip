@@ -643,7 +643,7 @@ module Archive; class Zip
           0,
           0,
           0,
-          zip_path.length,
+          zip_path.bytesize,
           extra_field_data.length
         ].pack('vvvVVVVvv')
       )
@@ -742,7 +742,7 @@ module Archive; class Zip
       extra_field_data = central_extra_field_data
       bytes_written += io.write(
         [
-          zip_path.length,
+          zip_path.bytesize,
           extra_field_data.length,
           comment.length,
           0,
