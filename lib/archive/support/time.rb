@@ -25,9 +25,9 @@ class Time
   end
 end
 
-# A representation of the DOS time structure which can be converted into
-# instances of Time.
 module Archive
+  # A representation of the DOS time structure which can be converted into
+  # instances of Time.
   class DOSTime
     include Comparable
 
