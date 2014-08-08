@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/zip/codec/deflate'
 
 describe "Archive::Zip::Deflate::Decompress#checksum" do
@@ -9,10 +11,10 @@ describe "Archive::Zip::Deflate::Decompress#checksum" do
     closed_decompressor = DeflateSpecs.compressed_data do |f|
       Archive::Zip::Codec::Deflate::Decompress.open(f) do |decompressor|
         decompressor.read
-        decompressor.checksum.should == Zlib.crc32(DeflateSpecs.test_data)
+        decompressor.checksum.must_equal(Zlib.crc32(DeflateSpecs.test_data))
         decompressor
       end
     end
-    closed_decompressor.checksum.should == Zlib.crc32(DeflateSpecs.test_data)
+    closed_decompressor.checksum.must_equal(Zlib.crc32(DeflateSpecs.test_data))
   end
 end

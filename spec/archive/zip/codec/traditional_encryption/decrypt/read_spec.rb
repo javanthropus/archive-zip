@@ -1,18 +1,17 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/zip/codec/traditional_encryption'
 
 describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#read" do
   it "calls the read method of the delegate" do
-    delegate = mock('delegate')
-    # RSpec's mocking facility supposedly supports this, but MSpec's does not as
-    # of version 1.5.10.
-    #delegate.should_receive(:read).with(an_instance_of(Fixnum)).at_least(:once).and_return { |n| "\000" * n }
-    # Use the following instead for now.
-    delegate.should_receive(:read).twice.and_return("\000" * 12, nil)
-    delegate.should_receive(:close).and_return(nil)
+    delegate = MiniTest::Mock.new
+    delegate.expect(:read, "\000" * 12, [Integer])
+    delegate.expect(:read, nil, [Integer])
+    delegate.expect(:close, nil)
     Archive::Zip::Codec::TraditionalEncryption::Decrypt.open(
       delegate,
       TraditionalEncryptionSpecs.password,
@@ -29,7 +28,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#read" do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |d|
-        d.read.should == TraditionalEncryptionSpecs.test_data
+        d.read.must_equal(TraditionalEncryptionSpecs.test_data)
       end
     end
   end
@@ -55,7 +54,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#read" do
         rescue Errno::EAGAIN
           retry
         end
-        buffer.should == TraditionalEncryptionSpecs.test_data
+        buffer.must_equal(TraditionalEncryptionSpecs.test_data)
       end
     end
   end
@@ -87,7 +86,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#read" do
         rescue Errno::EAGAIN
           retry
         end
-        buffer.should == TraditionalEncryptionSpecs.test_data
+        buffer.must_equal(TraditionalEncryptionSpecs.test_data)
       end
     end
   end
@@ -119,7 +118,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#read" do
         rescue Errno::EINTR
           retry
         end
-        buffer.should == TraditionalEncryptionSpecs.test_data
+        buffer.must_equal(TraditionalEncryptionSpecs.test_data)
       end
     end
   end

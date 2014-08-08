@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/zip/codec/traditional_encryption'
 
 describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#tell" do
@@ -12,13 +14,13 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#tell" do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |d|
-        d.tell.should == 0
+        d.tell.must_equal(0)
         d.read(4)
-        d.tell.should == 4
+        d.tell.must_equal(4)
         d.read
-        d.tell.should == 235
+        d.tell.must_equal(235)
         d.rewind
-        d.tell.should == 0
+        d.tell.must_equal(0)
       end
     end
   end

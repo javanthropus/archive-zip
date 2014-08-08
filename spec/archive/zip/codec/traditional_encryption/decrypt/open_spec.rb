@@ -1,8 +1,10 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
-require 'archive/zip/codec/store'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
+require 'archive/zip/codec/traditional_encryption'
 require 'archive/support/binary_stringio'
 
 describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt.open" do
@@ -12,7 +14,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt.open" do
       TraditionalEncryptionSpecs.password,
       TraditionalEncryptionSpecs.mtime
     )
-    d.class.should == Archive::Zip::Codec::TraditionalEncryption::Decrypt
+    d.must_be_instance_of(Archive::Zip::Codec::TraditionalEncryption::Decrypt)
     d.close
   end
 
@@ -22,7 +24,9 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt.open" do
       TraditionalEncryptionSpecs.password,
       TraditionalEncryptionSpecs.mtime
     ) do |decryptor|
-      decryptor.class.should == Archive::Zip::Codec::TraditionalEncryption::Decrypt
+      decryptor.must_be_instance_of(
+        Archive::Zip::Codec::TraditionalEncryption::Decrypt
+      )
     end
   end
 
@@ -34,6 +38,6 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt.open" do
     ) do |decryptor|
       decryptor
     end
-    d.closed?.should.be_true
+    d.closed?.must_equal(true)
   end
 end

@@ -19,7 +19,7 @@ tools.
   s.add_dependency('io-like', '~> 0.3.0')
 
   s.add_development_dependency('rake', '~> 10.3.2')
-  s.add_development_dependency('mspec', '~> 1.5.21')
+  s.add_development_dependency('minitest', '~> 5.4')
   s.add_development_dependency('yard', '~> 0.8.7.4')
   s.add_development_dependency('yard-redcarpet-ext', '~> 0.0.3')
   s.add_development_dependency('redcarpet', '~> 3.1.2')
@@ -55,8 +55,6 @@ tools.
     lib/archive/zip.rb
   )
   s.test_files   = %w(
-    default.mspec
-    spec_helper.rb
     spec/ioextensions/read_exactly_spec.rb
     spec/zlib/zreader/compressed_size_spec.rb
     spec/zlib/zreader/new_spec.rb

@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/support/zlib'
 require 'archive/zip/codec/store'
 
@@ -12,12 +14,14 @@ describe "Archive::Zip::Codec::Store::Decompress#data_descriptor" do
         cd
       ) do |decompressor|
         decompressor.read
-        decompressor.data_descriptor.class.should ==
+        decompressor.data_descriptor.must_be_instance_of(
           Archive::Zip::DataDescriptor
+        )
         decompressor
       end
-      closed_decompressor.data_descriptor.class.should ==
+      closed_decompressor.data_descriptor.must_be_instance_of(
         Archive::Zip::DataDescriptor
+      )
     end
   end
 
@@ -28,10 +32,10 @@ describe "Archive::Zip::Codec::Store::Decompress#data_descriptor" do
         cd
       ) do |decompressor|
         decompressor.read
-        decompressor.data_descriptor.crc32.should == crc32
+        decompressor.data_descriptor.crc32.must_equal(crc32)
         decompressor
       end
-      closed_decompressor.data_descriptor.crc32.should == crc32
+      closed_decompressor.data_descriptor.crc32.must_equal(crc32)
     end
   end
 
@@ -42,11 +46,12 @@ describe "Archive::Zip::Codec::Store::Decompress#data_descriptor" do
         cd
       ) do |decompressor|
         decompressor.read
-        decompressor.data_descriptor.compressed_size.should == compressed_size
+        decompressor.data_descriptor.compressed_size.must_equal(compressed_size)
         decompressor
       end
-      closed_decompressor.data_descriptor.compressed_size.should ==
+      closed_decompressor.data_descriptor.compressed_size.must_equal(
         compressed_size
+      )
     end
   end
 
@@ -57,12 +62,14 @@ describe "Archive::Zip::Codec::Store::Decompress#data_descriptor" do
         cd
       ) do |decompressor|
         decompressor.read
-        decompressor.data_descriptor.uncompressed_size.should ==
+        decompressor.data_descriptor.uncompressed_size.must_equal(
           uncompressed_size
+        )
         decompressor
       end
-      closed_decompressor.data_descriptor.uncompressed_size.should ==
+      closed_decompressor.data_descriptor.uncompressed_size.must_equal(
         uncompressed_size
+      )
     end
   end
 end

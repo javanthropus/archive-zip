@@ -1,21 +1,23 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/support/zlib'
 require 'archive/support/binary_stringio'
 
 describe "Zlib::ZReader.open" do
   it "returns a new instance when run without a block" do
-    Zlib::ZReader.open(BinaryStringIO.new).class.should == Zlib::ZReader
+    Zlib::ZReader.open(BinaryStringIO.new).class.must_equal Zlib::ZReader
   end
 
   it "executes a block with a new instance as an argument" do
-    Zlib::ZReader.open(BinaryStringIO.new) { |zr| zr.class.should == Zlib::ZReader }
+    Zlib::ZReader.open(BinaryStringIO.new) { |zr| zr.class.must_equal Zlib::ZReader }
   end
 
   it "closes the object after executing a block" do
-    Zlib::ZReader.open(BinaryStringIO.new) { |zr| zr }.closed?.should.be_true
+    Zlib::ZReader.open(BinaryStringIO.new) { |zr| zr }.closed?.must_equal true
   end
 
   it "does not require window_bits to be set" do
@@ -27,7 +29,7 @@ describe "Zlib::ZReader.open" do
     compressed_data.rewind
 
     Zlib::ZReader.open(compressed_data) do |zr|
-      zr.read.should == data
+      zr.read.must_equal data
     end
   end
 
@@ -43,7 +45,7 @@ describe "Zlib::ZReader.open" do
     compressed_data.rewind
 
     Zlib::ZReader.open(compressed_data, window_bits) do |zr|
-      zr.read.should == data
+      zr.read.must_equal data
     end
   end
 end

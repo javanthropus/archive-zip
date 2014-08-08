@@ -1,13 +1,15 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/support/zlib'
 require 'archive/support/binary_stringio'
 
 describe "Zlib::ZReader.new" do
   it "returns a new instance" do
-    Zlib::ZReader.new(BinaryStringIO.new).class.should == Zlib::ZReader
+    Zlib::ZReader.new(BinaryStringIO.new).class.must_equal Zlib::ZReader
   end
 
   it "does not require window_bits to be set" do
@@ -19,7 +21,7 @@ describe "Zlib::ZReader.new" do
     compressed_data.rewind
 
     zr = Zlib::ZReader.new(compressed_data)
-    zr.read.should == data
+    zr.read.must_equal data
     zr.close
   end
 
@@ -35,7 +37,7 @@ describe "Zlib::ZReader.new" do
     compressed_data.rewind
 
     zr = Zlib::ZReader.new(compressed_data, window_bits)
-    zr.read.should == data
+    zr.read.must_equal data
     zr.close
   end
 end

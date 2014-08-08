@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/zip/codec/deflate'
 require 'archive/support/binary_stringio'
 
@@ -13,10 +15,10 @@ describe "Archive::Zip::Codec::Deflate::Compress#checksum" do
     ) do |compressor|
       compressor.write(DeflateSpecs.test_data)
       compressor.flush
-      compressor.checksum.should == Zlib.crc32(DeflateSpecs.test_data)
+      compressor.checksum.must_equal Zlib.crc32(DeflateSpecs.test_data)
       compressor
     end
-    closed_compressor.checksum.should == Zlib.crc32(DeflateSpecs.test_data)
+    closed_compressor.checksum.must_equal Zlib.crc32(DeflateSpecs.test_data)
   end
 
   it "computes the CRC32 checksum even when the delegate performs partial writes" do
@@ -34,9 +36,9 @@ describe "Archive::Zip::Codec::Deflate::Compress#checksum" do
     ) do |compressor|
       compressor.write(DeflateSpecs.test_data)
       compressor.flush
-      compressor.checksum.should == Zlib.crc32(DeflateSpecs.test_data)
+      compressor.checksum.must_equal Zlib.crc32(DeflateSpecs.test_data)
       compressor
     end
-    closed_compressor.checksum.should == Zlib.crc32(DeflateSpecs.test_data)
+    closed_compressor.checksum.must_equal Zlib.crc32(DeflateSpecs.test_data)
   end
 end

@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/zip/codec/traditional_encryption'
 require 'archive/support/binary_stringio'
 
@@ -14,24 +16,20 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#seek" do
       TraditionalEncryptionSpecs.mtime
     ) do |e|
       e.write('test')
-      lambda { e.seek(0) }.should_not raise_error
+      e.seek(0).must_equal(0)
     end
   end
 
   it "raises Errno::EINVAL when attempting to seek to the beginning of the stream when the delegate does not respond to rewind" do
-    delegate = mock('delegate')
-    # RSpec's mocking facility supposedly supports this, but MSpec's does not as
-    # of version 1.5.10.
-    #delegate.should_receive(:write).with(an_instance_of(String)).at_least(:once).and_return { |s| s.length }
-    # Use the following instead for now.
-    delegate.should_receive(:write).at_least(:once).and_return(1)
-    delegate.should_receive(:close).and_return(nil)
+    delegate = MiniTest::Mock.new
+    delegate.expect(:write, 12, [String])
+    delegate.expect(:close, nil)
     Archive::Zip::Codec::TraditionalEncryption::Encrypt.open(
       delegate,
       TraditionalEncryptionSpecs.password,
       TraditionalEncryptionSpecs.mtime
     ) do |e|
-      lambda { e.seek(0) }.should raise_error(Errno::EINVAL)
+      lambda { e.seek(0) }.must_raise(Errno::EINVAL)
     end
   end
 
@@ -43,8 +41,8 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#seek" do
       TraditionalEncryptionSpecs.mtime
     ) do |e|
       e.write('test')
-      lambda { e.seek(1, IO::SEEK_CUR) }.should raise_error(Errno::EINVAL)
-      lambda { e.seek(-1, IO::SEEK_CUR) }.should raise_error(Errno::EINVAL)
+      lambda { e.seek(1, IO::SEEK_CUR) }.must_raise(Errno::EINVAL)
+      lambda { e.seek(-1, IO::SEEK_CUR) }.must_raise(Errno::EINVAL)
     end
   end
 
@@ -55,8 +53,8 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#seek" do
       TraditionalEncryptionSpecs.password,
       TraditionalEncryptionSpecs.mtime
     ) do |e|
-      lambda { e.seek(-1, IO::SEEK_SET) }.should raise_error(Errno::EINVAL)
-      lambda { e.seek(1, IO::SEEK_SET) }.should raise_error(Errno::EINVAL)
+      lambda { e.seek(-1, IO::SEEK_SET) }.must_raise(Errno::EINVAL)
+      lambda { e.seek(1, IO::SEEK_SET) }.must_raise(Errno::EINVAL)
     end
   end
 
@@ -67,9 +65,9 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#seek" do
       TraditionalEncryptionSpecs.password,
       TraditionalEncryptionSpecs.mtime
     ) do |e|
-      lambda { e.seek(0, IO::SEEK_END) }.should raise_error(Errno::EINVAL)
-      lambda { e.seek(-1, IO::SEEK_END) }.should raise_error(Errno::EINVAL)
-      lambda { e.seek(1, IO::SEEK_END) }.should raise_error(Errno::EINVAL)
+      lambda { e.seek(0, IO::SEEK_END) }.must_raise(Errno::EINVAL)
+      lambda { e.seek(-1, IO::SEEK_END) }.must_raise(Errno::EINVAL)
+      lambda { e.seek(1, IO::SEEK_END) }.must_raise(Errno::EINVAL)
     end
   end
 end

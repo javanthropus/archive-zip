@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/zip/codec/traditional_encryption'
 require 'archive/support/binary_stringio'
 
@@ -12,7 +14,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt.new" do
       TraditionalEncryptionSpecs.password,
       TraditionalEncryptionSpecs.mtime
     )
-    e.class.should == Archive::Zip::Codec::TraditionalEncryption::Encrypt
+    e.must_be_instance_of(Archive::Zip::Codec::TraditionalEncryption::Encrypt)
     e.close
   end
 end

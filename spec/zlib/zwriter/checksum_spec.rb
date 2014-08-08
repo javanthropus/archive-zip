@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/support/zlib'
 require 'archive/support/binary_stringio'
 
@@ -11,10 +13,10 @@ describe "Zlib::ZWriter#checksum" do
     closed_zw = Zlib::ZWriter.open(compressed_data, nil, 15) do |zw|
       zw.write(ZlibSpecs.test_data)
       zw.flush
-      zw.checksum.should == Zlib.adler32(ZlibSpecs.test_data)
+      zw.checksum.must_equal Zlib.adler32(ZlibSpecs.test_data)
       zw
     end
-    closed_zw.checksum.should == Zlib.adler32(ZlibSpecs.test_data)
+    closed_zw.checksum.must_equal Zlib.adler32(ZlibSpecs.test_data)
   end
 
   it "computes the CRC32 checksum of gzip formatted data" do
@@ -22,10 +24,10 @@ describe "Zlib::ZWriter#checksum" do
     closed_zw = Zlib::ZWriter.open(compressed_data, nil, 31) do |zw|
       zw.write(ZlibSpecs.test_data)
       zw.flush
-      zw.checksum.should == Zlib.crc32(ZlibSpecs.test_data)
+      zw.checksum.must_equal Zlib.crc32(ZlibSpecs.test_data)
       zw
     end
-    closed_zw.checksum.should == Zlib.crc32(ZlibSpecs.test_data)
+    closed_zw.checksum.must_equal Zlib.crc32(ZlibSpecs.test_data)
   end
 
   it "does not compute a checksum for raw zlib data" do
@@ -33,9 +35,9 @@ describe "Zlib::ZWriter#checksum" do
     closed_zw = Zlib::ZWriter.open(compressed_data, nil, -15) do |zw|
       zw.write(ZlibSpecs.test_data)
       zw.flush
-      zw.checksum.should == nil
+      zw.checksum.must_equal nil
       zw
     end
-    closed_zw.checksum.should == nil
+    closed_zw.checksum.must_equal nil
   end
 end

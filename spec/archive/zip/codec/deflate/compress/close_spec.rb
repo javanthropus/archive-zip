@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/zip/codec/deflate'
 require 'archive/support/binary_stringio'
 
@@ -11,13 +13,13 @@ describe "Archive::Zip::Codec::Deflate::Compress#close" do
       BinaryStringIO.new, Zlib::DEFAULT_COMPRESSION
     )
     c.close
-    c.closed?.should be_true
+    c.closed?.must_equal true
   end
 
   it "closes the delegate stream by default" do
-    delegate = mock('delegate')
-    delegate.should_receive(:close).and_return(nil)
-    delegate.should_receive(:write).at_least(:once).and_return(1)
+    delegate = MiniTest::Mock.new
+    delegate.expect(:write, 8, [String])
+    delegate.expect(:close, nil)
     c = Archive::Zip::Codec::Deflate::Compress.new(
       delegate, Zlib::DEFAULT_COMPRESSION
     )
@@ -25,17 +27,16 @@ describe "Archive::Zip::Codec::Deflate::Compress#close" do
   end
 
   it "optionally leaves the delegate stream open" do
-    delegate = mock('delegate')
-    delegate.should_receive(:close).and_return(nil)
-    delegate.should_receive(:write).at_least(:once).and_return(1)
+    delegate = MiniTest::Mock.new
+    delegate.expect(:write, 8, [String])
+    delegate.expect(:close, nil)
     c = Archive::Zip::Codec::Deflate::Compress.new(
       delegate, Zlib::DEFAULT_COMPRESSION
     )
     c.close(true)
 
-    delegate = mock('delegate')
-    delegate.should_not_receive(:close)
-    delegate.should_receive(:write).at_least(:once).and_return(1)
+    delegate = MiniTest::Mock.new
+    delegate.expect(:write, 8, [String])
     c = Archive::Zip::Codec::Deflate::Compress.new(
       delegate, Zlib::DEFAULT_COMPRESSION
     )

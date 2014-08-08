@@ -1,14 +1,16 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/support/zlib'
 require 'archive/support/binary_stringio'
 
 describe "Zlib::ZWriter.new" do
   it "returns a new instance" do
     zw = Zlib::ZWriter.new(BinaryStringIO.new)
-    zw.class.should == Zlib::ZWriter
+    zw.class.must_equal Zlib::ZWriter
     zw.close
   end
 
@@ -19,7 +21,7 @@ describe "Zlib::ZWriter.new" do
     zw.write(data)
     zw.close
 
-    compressed_data.string.should == ZlibSpecs.compressed_data
+    compressed_data.string.must_equal ZlibSpecs.compressed_data
   end
 
   it "allows level to be set" do
@@ -29,7 +31,7 @@ describe "Zlib::ZWriter.new" do
     zw.write(data)
     zw.close
 
-    compressed_data.string.should == ZlibSpecs.compressed_data_nocomp
+    compressed_data.string.must_equal ZlibSpecs.compressed_data_nocomp
   end
 
   it "allows window_bits to be set" do
@@ -39,7 +41,7 @@ describe "Zlib::ZWriter.new" do
     zw.write(data)
     zw.close
 
-    compressed_data.string.should == ZlibSpecs.compressed_data_minwin
+    compressed_data.string.must_equal ZlibSpecs.compressed_data_minwin
   end
 
   it "allows mem_level to be set" do
@@ -49,7 +51,7 @@ describe "Zlib::ZWriter.new" do
     zw.write(data)
     zw.close
 
-    compressed_data.string.should == ZlibSpecs.compressed_data_minmem
+    compressed_data.string.must_equal ZlibSpecs.compressed_data_minmem
   end
 
   it "allows strategy to be set" do
@@ -59,6 +61,6 @@ describe "Zlib::ZWriter.new" do
     zw.write(data)
     zw.close
 
-    compressed_data.string.should == ZlibSpecs.compressed_data_huffman
+    compressed_data.string.must_equal ZlibSpecs.compressed_data_huffman
   end
 end

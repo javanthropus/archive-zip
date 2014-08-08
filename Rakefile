@@ -4,6 +4,7 @@
 require 'rubygems'
 
 require 'erb'
+require 'rake/testtask'
 require 'rubygems/package_task'
 require 'rake/clean'
 require 'yard'
@@ -168,8 +169,8 @@ namespace :gem do
   end
 end
 
-task :test do
-  sh 'mspec'
+Rake::TestTask.new do |t|
+  t.pattern = 'spec/**/*_spec.rb'
 end
 
 # Version string management tasks.

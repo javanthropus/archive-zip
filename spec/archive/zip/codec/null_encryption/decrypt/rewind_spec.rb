@@ -1,7 +1,9 @@
 # encoding: UTF-8
 
-require File.dirname(__FILE__) + '/../../../../../../spec_helper'
-require File.dirname(__FILE__) + '/../fixtures/classes'
+require 'minitest/autorun'
+
+require File.expand_path('../../fixtures/classes', __FILE__)
+
 require 'archive/zip/codec/null_encryption'
 
 describe "Archive::Zip::Codec::NullEncryption::Decrypt#rewind" do
@@ -9,17 +11,17 @@ describe "Archive::Zip::Codec::NullEncryption::Decrypt#rewind" do
     NullEncryptionSpecs.encrypted_data do |ed|
       Archive::Zip::Codec::NullEncryption::Decrypt.open(ed) do |d|
         d.read(4)
-        lambda { d.rewind }.should_not raise_error
-        d.read.should == NullEncryptionSpecs.test_data
+        d.rewind
+        d.read.must_equal(NullEncryptionSpecs.test_data)
       end
     end
   end
 
   it "raises Errno::EINVAL when attempting to rewind the stream when the delegate does not respond to rewind" do
-    delegate = mock('delegate')
-    delegate.should_receive(:close).and_return(nil)
+    delegate = MiniTest::Mock.new
+    delegate.expect(:close, nil)
     Archive::Zip::Codec::NullEncryption::Decrypt.open(delegate) do |d|
-      lambda { d.rewind }.should raise_error(Errno::EINVAL)
+      lambda { d.rewind }.must_raise(Errno::EINVAL)
     end
   end
 end
