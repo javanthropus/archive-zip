@@ -20,11 +20,13 @@ tools.
 
   s.add_development_dependency('rake', '~> 10.3.2')
   s.add_development_dependency('minitest', '~> 5.4')
+  s.add_development_dependency('pry')
   s.add_development_dependency('yard', '~> 0.8.7.4')
   s.add_development_dependency('yard-redcarpet-ext', '~> 0.0.3')
-  s.add_development_dependency('redcarpet', '~> 3.1.2')
   s.add_development_dependency('github-markup', '~> 1.2.1')
-  s.add_development_dependency('pry')
+  if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('1.9.2')
+    s.add_development_dependency('redcarpet', '~> 3.1.2')
+  end
 
   s.files        = %w(
     .yardopts
