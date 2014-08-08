@@ -29,10 +29,12 @@ describe "BinaryStringIO.new" do
     lambda { BinaryStringIO.new('', 'w', 42) }.must_raise ArgumentError
   end
 
-  if Object.const_defined?(:Encoding)
-    it "sets the external encoding to binary" do
-      io = BinaryStringIO.new
-      io.external_encoding.must_equal Encoding::ASCII_8BIT
+  it "sets the external encoding to binary" do
+    unless Object.const_defined?(:Encoding)
+      skip("Encoding methods are not supported on current Ruby (#{RUBY_DESCRIPTION})")
     end
+
+    io = BinaryStringIO.new
+    io.external_encoding.must_equal Encoding::ASCII_8BIT
   end
 end

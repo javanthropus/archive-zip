@@ -14,10 +14,17 @@ class BinaryStringIO < StringIO
 
     # Force a binary encoding when possible.
     if respond_to?(:set_encoding, true)
+      @encoding_locked = false
       set_encoding('binary')
     end
   end
 
-  # Hide #set_encoding so that the encoding cannot be changed later.
-  private :set_encoding if instance_methods.include?(:set_encoding)
+  if instance_methods.include?(:set_encoding)
+    # Raise an exception on attempts to change the encoding.
+    def set_encoding(*args)
+      raise 'Changing encoding is not allowed' if @encoding_locked
+      @encoding_locked = true
+      super
+    end
+  end
 end
