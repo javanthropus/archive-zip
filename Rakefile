@@ -113,12 +113,12 @@ task :build => 'build:gem'
 
 # Build related tasks.
 namespace :build do
-  # Create the gem and package tasks.
-  Gem::PackageTask.new(SPEC).define
-
   # Ensure that the manifest is consulted when building the gem.  Any
   # generated/compiled files should be available at that time.
   task :gem => :check_manifest
+
+  # Create the gem and package tasks.
+  Gem::PackageTask.new(SPEC).define
 
   desc 'Verify the manifest'
   task :check_manifest do
