@@ -21,7 +21,7 @@ updating ZIP archives.  This implementation is 100% Ruby and loosely modeled on
 the archive creation and extraction capabilities of InfoZip's zip and unzip
 tools.
 
-## Features
+## FEATURES
 
 * 100% native Ruby.  (Well, almost... depends on zlib.)
 * Archive creation and extraction is supported with only a few lines of code.
@@ -36,7 +36,7 @@ tools.
 * More compression codecs can be added on the fly.
 * Traditional (weak) encryption is supported out of the box.
 
-## Known Bugs/Limitations
+## KNOWN BUGS/LIMITATIONS
 
 * More testcases are needed.
 * All file entries are archived and extracted in binary mode.  No attempt is
@@ -142,7 +142,7 @@ Archive::Zip.extract(
 )
 ```
 
-## Future work items (in no particular order):
+## FUTURE WORK ITEMS (in no particular order):
 
 * Add test cases for all classes.
 * Add support for using non-seekable IO objects as archive sources.
@@ -176,13 +176,13 @@ After checking out the source, run:
 This will install all dependencies, run the tests/specs, and generate the
 documentation.
 
-## AUTHORS
+## AUTHORS and CONTRIBUTORS
 
 Thanks to all contributors.  Without your help this project would not exist.
 
 * Jeremy Bopp :: jeremy@bopp.net
 
-## Contributing
+## CONTRIBUTING
 
 Contributions for bug fixes, documentation, extensions, tests, etc. are
 encouraged.
@@ -192,7 +192,7 @@ encouraged.
 3. Add tests for the fix or feature.
 4. Make a pull request.
 
-### Coding Style
+### CODING STYLE
 
 The following points are not necessarily set in stone but should rather be used
 as a good guideline.  Consistency is the goal of coding style, and changes will
