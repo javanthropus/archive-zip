@@ -139,8 +139,9 @@ namespace :build do
     end
   end
 
-  # Creates the README.md file from a template and the gemspec contents.
-  file 'README.md' => ['README.md.erb', GEMSPEC] do
+  # Creates the README.md file from a template, the license file and the gemspec
+  # contents.
+  file 'README.md' => ['README.md.erb', 'LICENSE', GEMSPEC] do
     spec = SPEC
     File.open('README.md', 'w') do |readme|
       readme.write(
