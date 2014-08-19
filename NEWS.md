@@ -6,6 +6,19 @@ detailed information is available in the rest of the documentation.
 **NOTE:** Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+## v0.7.0 (2014/08/18)
+
+### Fixes
+
+* Avoid corrupting the archive when storing entries that have multibyte names.
+
+### Notes
+
+* Ruby 1.8.6 support has been dropped.
+  * This may come back if demand warrants it.
+* Switched to the MIT license.
+* Now using minitest instead of mspec for tests.
+
 ## v0.6.0 (2013/03/24)
 
 ### Fixes
