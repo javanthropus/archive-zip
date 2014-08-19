@@ -16,7 +16,9 @@ SPEC = eval(File.read(GEMSPEC), nil, GEMSPEC)
 # The path to the version.rb file and a string to eval to find the version.
 VERSION_RB = "lib/#{SPEC.name.gsub('-', '/')}/version.rb"
 VERSION_REF =
-  "#{SPEC.name.split('-').map(&:capitalize).join('::').split('_').map(&:capitalize).join}::VERSION"
+  SPEC.name.split('-').map do |subname|
+    subname.split('_').map(&:capitalize).join
+  end.join('::') + "::VERSION"
 
 # A dynamically generated list of files that should match the manifest (the
 # combined contents of SPEC.files and SPEC.test_files).  The idea is for this
