@@ -932,7 +932,7 @@ module Archive; class Zip; module Entry
     # Sets the link target for this entry.  As a side effect, the raw_data
     # attribute is set to +nil+.
     def link_target=(link_target)
-      raw_data = nil
+      self.raw_data = nil
       @link_target = link_target
     end
 

@@ -113,15 +113,6 @@ module Archive; class Zip; module ExtraField
     # This method signature is part of the interface contract expected by
     # Archive::Zip::Entry for extra field objects.
     #
-    # Returns a String suitable to writing to a central file record in a ZIP
-    # archive file which contains the data for this object.
-    def dump_central
-      ''
-    end
-
-    # This method signature is part of the interface contract expected by
-    # Archive::Zip::Entry for extra field objects.
-    #
     # Returns a String suitable to writing to a local file record in a ZIP
     # archive file which contains the data for this object.
     def dump_local
@@ -134,7 +125,13 @@ module Archive; class Zip; module ExtraField
         @gid
       ].pack('vvVVvv') + @data
     end
-    alias :dump_local :dump_central
+
+    # This method signature is part of the interface contract expected by
+    # Archive::Zip::Entry for extra field objects.
+    #
+    # Returns a String suitable to writing to a central file record in a ZIP
+    # archive file which contains the data for this object.
+    alias :dump_central :dump_local
 
     protected
 
