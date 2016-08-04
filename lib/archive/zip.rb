@@ -368,6 +368,7 @@ module Archive # :nodoc:
       options[:directories]  = true  unless options.has_key?(:directories)
       options[:symlinks]     = false unless options.has_key?(:symlinks)
       options[:flatten]      = false unless options.has_key?(:flatten)
+	  options[:file_types]   = [] unless options.has_key?(:file_types)
 
       # Flattening the directory structure implies that directories are skipped
       # and that the path prefix should be ignored.
@@ -375,7 +376,13 @@ module Archive # :nodoc:
         options[:path_prefix] = ''
         options[:directories] = false
       end
-
+	  
+	  # Filter out unwanted filetypes. Ignore case and allow directories
+      if !options[:file_types].empty? then
+        options[:file_types].each{|file_type| file_type.downcase!}
+        paths.reject!{|path| !options[:file_types].include?(File.extname(path.downcase)) && !File.directory?(path)}
+      end
+	  
       # Clean up the path prefix.
       options[:path_prefix] = Entry.expand_path(options[:path_prefix].to_s)
 
