@@ -44,8 +44,8 @@ module Archive
     # current time.
     def initialize(dos_time = nil)
       case dos_time
-      when nil
-        @dos_time = Time.now.to_dos_time.dos_time
+      when nil, 0
+        @dos_time = Time.now.to_dos_time.to_i
       when Integer
         @dos_time = dos_time
       else
