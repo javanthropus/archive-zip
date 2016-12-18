@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = 'archive-zip'
-  s.version     = '0.8.0'
+  s.version     = '0.9.0'
   s.licenses    = ['MIT']
   s.platform    = Gem::Platform::RUBY
   s.authors     = ['Jeremy Bopp', 'Akira Matsuda']
@@ -57,6 +57,7 @@ tools.
     lib/archive/zip/version.rb
   )
   s.test_files   = %w(
+    spec/archive/dos_time_spec.rb
     spec/archive/zip/archive_spec.rb
     spec/archive/zip/codec/deflate/compress/checksum_spec.rb
     spec/archive/zip/codec/deflate/compress/close_spec.rb

@@ -6,6 +6,12 @@ detailed information is available in the rest of the documentation.
 **NOTE:** Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+## v0.9.0 (2016/12/18)
+
+### Fixes
+
+* Initialize DOSTime correctly when not given a struct to parse.
+
 ## v0.8.0 (2015/01/05)
 
 ### Fixes
