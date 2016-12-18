@@ -45,7 +45,7 @@ module Archive
     def initialize(dos_time = nil)
       case dos_time
       when nil
-        @dos_time = Time.now.to_dos_time.dos_time
+        @dos_time = Time.now.to_dos_time.to_i
       when Integer
         @dos_time = dos_time
       else
@@ -54,6 +54,8 @@ module Archive
         end
         @dos_time = dos_time.unpack('V')[0]
       end
+
+      validate
     end
 
     # Returns -1 if _other_ is a time earlier than this one, 0 if _other_ is the
@@ -85,6 +87,33 @@ module Archive
       month  = ((0b1111    << 21 & @dos_time) >> 21)
       year   = ((0b1111111 << 25 & @dos_time) >> 25) + 1980
       return Time.local(year, month, day, hour, minute, second)
+    end
+
+    private
+
+    def validate
+      second = (0b11111         & @dos_time)
+      minute = (0b111111  << 5  & @dos_time) >>  5
+      hour   = (0b11111   << 11 & @dos_time) >> 11
+      day    = (0b11111   << 16 & @dos_time) >> 16
+      month  = (0b1111    << 21 & @dos_time) >> 21
+      year   = (0b1111111 << 25 & @dos_time) >> 25
+
+      if second > 29
+        raise ArgumentError, 'second must not be greater than 29'
+      elsif minute > 59
+        raise ArgumentError, 'minute must not be greater than 59'
+      elsif hour > 24
+        raise ArgumentError, 'hour must not be greater than 24'
+      elsif day < 1
+        raise ArgumentError, 'day must not be less than 1'
+      elsif month < 1
+        raise ArgumentError, 'month must not be less than 1'
+      elsif month > 12
+        raise ArgumentError, 'month must not be greater than 12'
+      elsif year > 119
+        raise ArgumentError, 'year must not be greater than 119'
+      end
     end
   end
 end
