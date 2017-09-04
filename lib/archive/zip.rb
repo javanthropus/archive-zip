@@ -151,6 +151,7 @@ module Archive # :nodoc:
       @entries = []
       @comment = ''
       @closed = false
+      @parse_complete = false
     end
 
     # A comment string for the ZIP archive.

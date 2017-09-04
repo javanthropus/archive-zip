@@ -481,8 +481,8 @@ module Archive; class Zip
       self.expected_data_descriptor = nil
       self.compression_codec = Zip::Codec::Store.new
       self.encryption_codec = Zip::Codec::NullEncryption.new
-      self.password = nil
       @raw_data = raw_data
+      self.password = nil
       @extra_fields = []
     end
 
