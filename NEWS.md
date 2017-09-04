@@ -6,6 +6,12 @@ detailed information is available in the rest of the documentation.
 **NOTE:** Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+## v0.10.0 (2017/09/04)
+
+### Fixes
+
+* Avoid Ruby warnings for uninitialized attributes. (Tatsuya Sato)
+
 ## v0.9.0 (2016/12/18)
 
 ### Fixes

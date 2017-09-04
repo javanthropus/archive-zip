@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name        = 'archive-zip'
-  s.version     = '0.9.0'
+  s.version     = '0.10.0'
   s.licenses    = ['MIT']
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ['Jeremy Bopp', 'Akira Matsuda']
-  s.email       = ['jeremy@bopp.net', 'ronnie@dio.jp']
+  s.authors     = ['Jeremy Bopp', 'Akira Matsuda', 'Tatsuya Sato']
+  s.email       = ['jeremy@bopp.net', 'ronnie@dio.jp', 'tatsuya.b.sato@rakuten.com']
   s.homepage    = 'http://github.com/javanthropus/archive-zip'
   s.summary     = 'Simple, extensible, pure Ruby ZIP archive support.'
   s.description = <<-EOD

@@ -182,6 +182,7 @@ Thanks to all contributors.  Without your help this project would not exist.
 
 * Jeremy Bopp :: jeremy@bopp.net
 * Akira Matsuda :: ronnie@dio.jp
+* Tatsuya Sato :: tatsuya.b.sato@rakuten.com
 
 ## CONTRIBUTING
 
