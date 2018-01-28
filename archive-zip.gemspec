@@ -19,13 +19,12 @@ tools.
 
   s.add_dependency('io-like', '~> 0.3.0')
 
-  s.add_development_dependency('rake', '~> 10.3')
-  s.add_development_dependency('minitest', '~> 5.4')
-  s.add_development_dependency('yard', '~> 0.8')
-  s.add_development_dependency('yard-redcarpet-ext', '~> 0.0')
-  s.add_development_dependency('github-markup', '~> 1.2')
+  s.add_development_dependency('rake', '~> 12.3')
+  s.add_development_dependency('minitest', '~> 5.11')
+  s.add_development_dependency('yard', '~> 0.9.12')
+  s.add_development_dependency('github-markup', '~> 1.6')
   if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('1.9.2')
-    s.add_development_dependency('redcarpet', '~> 3.1')
+    s.add_development_dependency('redcarpet', '~> 3.4')
   end
 
   s.files        = %w(
