@@ -31,7 +31,7 @@ describe "Archive::Zip::Codec::Deflate::Compress.open" do
   it "allows level to be set" do
     data = DeflateSpecs.test_data
     compressed_data = BinaryStringIO.new
-    c = Archive::Zip::Codec::Deflate::Compress.open(
+    Archive::Zip::Codec::Deflate::Compress.open(
       compressed_data, Zlib::DEFAULT_COMPRESSION
     ) { |c| c.write(data) }
 
@@ -39,7 +39,7 @@ describe "Archive::Zip::Codec::Deflate::Compress.open" do
 
     data = DeflateSpecs.test_data
     compressed_data = BinaryStringIO.new
-    c = Archive::Zip::Codec::Deflate::Compress.open(
+    Archive::Zip::Codec::Deflate::Compress.open(
       compressed_data, Zlib::NO_COMPRESSION
     ) { |c| c.write(data) }
 

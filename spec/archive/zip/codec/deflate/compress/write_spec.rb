@@ -56,6 +56,7 @@ describe "Archive::Zip::Codec::Deflate::Compress#write" do
     class << compressed_data
       alias :write_orig :write
       def write(buffer)
+        @error_raised ||= false
         if @error_raised then
           @error_raised = false
           write_orig(buffer)
@@ -85,6 +86,7 @@ describe "Archive::Zip::Codec::Deflate::Compress#write" do
     class << compressed_data
       alias :write_orig :write
       def write(buffer)
+        @error_raised ||= false
         if @error_raised then
           @error_raised = false
           write_orig(buffer)

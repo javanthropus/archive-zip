@@ -17,6 +17,9 @@ describe "Zlib::ZReader#read" do
         zr.read
       rescue Zlib::BufError
       end
+
+      # Avoid warnings from zlib caused by closing the un-finished inflater.
+      def zr.close; end
     end
   end
 
@@ -38,12 +41,18 @@ describe "Zlib::ZReader#read" do
     truncated_data = ZlibSpecs.compressed_data { |cd| cd.read(100) }
     Zlib::ZReader.open(BinaryStringIO.new(truncated_data)) do |zr|
       lambda { zr.read }.must_raise Zlib::BufError
+
+      # Avoid warnings from zlib caused by closing the un-finished inflater.
+      def zr.close; end
     end
   end
 
   it "raises Zlib::BufError when reading empty data" do
     Zlib::ZReader.open(BinaryStringIO.new()) do |zr|
       lambda { zr.read }.must_raise Zlib::BufError
+
+      # Avoid warnings from zlib caused by closing the un-finished inflater.
+      def zr.close; end
     end
   end
 end

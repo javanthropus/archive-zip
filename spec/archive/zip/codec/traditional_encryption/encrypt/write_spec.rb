@@ -53,6 +53,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#write" do
     class << encrypted_data
       alias :write_orig :write
       def write(buffer)
+        @error_raised ||= false
         if @error_raised then
           @error_raised = false
           write_orig(buffer)
@@ -86,6 +87,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Encrypt#write" do
     class << encrypted_data
       alias :write_orig :write
       def write(buffer)
+        @error_raised ||= false
         if @error_raised then
           @error_raised = false
           write_orig(buffer)

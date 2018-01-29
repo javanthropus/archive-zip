@@ -35,9 +35,9 @@ describe "Zlib::ZWriter#checksum" do
     closed_zw = Zlib::ZWriter.open(compressed_data, nil, -15) do |zw|
       zw.write(ZlibSpecs.test_data)
       zw.flush
-      zw.checksum.must_equal nil
+      zw.checksum.must_be_nil
       zw
     end
-    closed_zw.checksum.must_equal nil
+    closed_zw.checksum.must_be_nil
   end
 end

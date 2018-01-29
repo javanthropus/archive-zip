@@ -65,6 +65,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#read" do
       class << ed
         alias :read_orig :read
         def read(length = nil, buffer = nil)
+          @error_raised ||= false
           if @error_raised then
             @error_raised = false
             read_orig(length, buffer)
@@ -97,6 +98,7 @@ describe "Archive::Zip::Codec::TraditionalEncryption::Decrypt#read" do
       class << ed
         alias :read_orig :read
         def read(length = nil, buffer = nil)
+          @error_raised ||= false
           if @error_raised then
             @error_raised = false
             read_orig(length, buffer)
