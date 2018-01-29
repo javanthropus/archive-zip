@@ -229,7 +229,7 @@ be more easily accepted if they are consistent with the rest of the code.
 ```
 (The MIT License)
 
-Copyright (c) 2016 Jeremy Bopp
+Copyright (c) 2018 Jeremy Bopp
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

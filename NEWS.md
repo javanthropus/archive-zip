@@ -6,6 +6,12 @@ detailed information is available in the rest of the documentation.
 **NOTE:** Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+## v0.11.0 (2018/01/28)
+
+### Fixes
+
+* Upgrade gems required for development.
+
 ## v0.10.0 (2017/09/04)
 
 ### Fixes
