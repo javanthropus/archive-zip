@@ -26,9 +26,9 @@ module Archive; class Zip
       require 'archive/zip/codec/deflate'
       require 'archive/zip/codec/store'
 
-      codec = COMPRESSION_CODECS[compression_method].new(general_purpose_flags)
+      codec = COMPRESSION_CODECS[compression_method]
       raise Zip::Error, 'unsupported compression codec' if codec.nil?
-      codec
+      codec.new(general_purpose_flags)
     end
 
     # Returns a new encryption codec instance based on _general_purpose_flags_.
