@@ -183,6 +183,7 @@ Thanks to all contributors.  Without your help this project would not exist.
 * Jeremy Bopp :: jeremy@bopp.net
 * Akira Matsuda :: ronnie@dio.jp
 * Tatsuya Sato :: tatsuya.b.sato@rakuten.com
+* Kouhei Sutou :: kou@clear-code.com
 
 ## CONTRIBUTING
 
@@ -229,7 +230,7 @@ be more easily accepted if they are consistent with the rest of the code.
 ```
 (The MIT License)
 
-Copyright (c) 2018 Jeremy Bopp
+Copyright (c) 2019 Jeremy Bopp
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

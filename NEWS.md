@@ -6,6 +6,13 @@ detailed information is available in the rest of the documentation.
 **NOTE:** Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+## v0.12.0 (2019/02/28)
+
+### Fixes
+
+* Check for codec availability before attempting to initialize a codec instance
+  during extraction. (Kouhei Sutou)
+
 ## v0.11.0 (2018/01/28)
 
 ### Fixes
