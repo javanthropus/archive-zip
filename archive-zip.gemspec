@@ -15,7 +15,6 @@ updating ZIP archives.  This implementation is 100% Ruby and loosely modeled on
 the archive creation and extraction capabilities of InfoZip's zip and unzip
 tools.
   EOD
-  s.rubyforge_project = 'archive-zip'
 
   s.add_dependency('io-like', '~> 0.3.0')
 
