@@ -21,12 +21,11 @@ VERSION_REF =
   end.join('::') + "::VERSION"
 
 # A dynamically generated list of files that should match the manifest (the
-# combined contents of SPEC.files and SPEC.test_files).  The idea is for this
-# list to contain all project files except for those that have been explicitly
-# excluded.  This list will be compared with the manifest from the SPEC in order
-# to help catch the addition or removal of files to or from the project that
-# have not been accounted for either by an exclusion here or an inclusion in the
-# SPEC manifest.
+# contents of SPEC.files).  The idea is for this list to contain all project
+# files except for those that have been explicitly excluded.  This list will be
+# compared with the manifest from the SPEC in order to help catch the addition
+# or removal of files to or from the project that have not been accounted for
+# either by an exclusion here or an inclusion in the SPEC manifest.
 #
 # NOTE:
 # It is critical that the manifest is *not* automatically generated via globbing
@@ -34,26 +33,22 @@ VERSION_REF =
 # redundantly generated lists of files that probably will not protect the
 # project from the unintentional inclusion or exclusion of files in the
 # distribution.
-PKG_FILES = FileList.new(Dir.glob('**/*', File::FNM_DOTMATCH)) do |files|
-  # Exclude anything that doesn't exist as well as directories.
-  files.exclude {|file| ! File.exist?(file) || File.directory?(file)}
-  # Exclude Git administrative files.
-  files.exclude(%r{(^|[/\\])\.git(ignore|modules|keep)?([/\\]|$)})
-  # Exclude editor swap/temporary files.
-  files.exclude('**/.*.sw?')
-  # Exclude gemspec files.
-  files.exclude('*.gemspec')
-  # Exclude the README template file.
-  files.exclude('README.md.erb')
-  # Exclude resources for bundler.
-  files.exclude('Gemfile', 'Gemfile.lock')
-  files.exclude(%r{^.bundle([/\\]|$)})
-  files.exclude(%r{^vendor/bundle([/\\]|$)})
-  # Exclude generated content, except for the README file.
-  files.exclude(%r{^(pkg|doc|.yardoc)([/\\]|$)})
-  # Exclude Rubinius compiled Ruby files.
-  files.exclude('**/*.rbc')
-  files.exclude('.rbx/**/*')
+PKG_FILES = FileList.new('**/*') do |files|
+  files.exclude(
+    # Test files
+    'spec/**/*', 'rubyspec/**/*', 'mspec/**/*', 'mspec-overrides/**/*',
+    'spec_helper.rb', 'io-like.mspec',
+    # Non-shipping source files
+    '*.gemspec', 'Gemfile', 'Gemfile.lock', 'Rakefile', 'README.md.erb',
+    # Examples and experiments
+    'examples/**/*', 'experiments/**/*',
+    # Bundler files
+    'vendor/bundle/**/*',
+    # Generated content except for README
+    'pkg/**/*', 'doc/**/*'
+  )
+  # Exclude directories.
+  files.exclude {|file| File.directory?(file)}
 end
 
 # Make sure that :clean and :clobber will not whack the repository files.
@@ -127,15 +122,14 @@ namespace :build do
     manifest_files = (SPEC.files + SPEC.test_files).sort.uniq
     pkg_files = PKG_FILES.sort.uniq
     if manifest_files != pkg_files then
-      common_files = manifest_files & pkg_files
-      manifest_files -= common_files
-      pkg_files -= common_files
-      message = ["The manifest does not match the automatic file list."]
-      unless manifest_files.empty? then
-        message << "  Extraneous files:\n    " + manifest_files.join("\n    ")
+      extraneous_files = manifest_files - pkg_files
+      missing_files = pkg_files - manifest_files
+      message = ['The manifest does not match the automatic file list.']
+      unless extraneous_files.empty? then
+        message << "  Extraneous files:\n    " + extraneous_files.join("\n    ")
       end
-      unless pkg_files.empty?
-        message << "  Missing files:\n    " + pkg_files.join("\n    ")
+      unless missing_files.empty?
+        message << "  Missing files:\n    " + missing_files.join("\n    ")
       end
       raise message.join("\n")
     end

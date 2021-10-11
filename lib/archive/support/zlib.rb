@@ -1,8 +1,7 @@
 # encoding: UTF-8
 
+require 'io/like_helpers/delegated_io'
 require 'zlib'
-
-require 'archive/support/io-like'
 
 module Zlib # :nodoc:
   # The maximum size of the zlib history buffer.  Note that zlib allows larger
@@ -23,25 +22,7 @@ module Zlib # :nodoc:
   # Zlib::ZWriter is a writable, IO-like object (includes IO::Like) which wraps
   # other writable, IO-like objects in order to facilitate writing data to those
   # objects using the deflate method of compression.
-  class ZWriter
-    include IO::Like
-
-    # Creates a new instance of this class with the given arguments using #new
-    # and then passes the instance to the given block.  The #close method is
-    # guaranteed to be called after the block completes.
-    #
-    # Equivalent to #new if no block is given.
-    def self.open(delegate, level = nil, window_bits = nil, mem_level = nil, strategy = nil)
-      zw = new(delegate, level, window_bits, mem_level, strategy)
-      return zw unless block_given?
-
-      begin
-        yield(zw)
-      ensure
-        zw.close unless zw.closed?
-      end
-    end
-
+  class ZWriter < IO::LikeHelpers::DelegatedIO
     # Creates a new instance of this class.  _delegate_ must respond to the
     # _write_ method as an instance of IO would.  _level_, _window_bits_,
     # _mem_level_, and _strategy_ are all passed directly to
@@ -135,25 +116,27 @@ module Zlib # :nodoc:
     # <b>NOTE:</b> Due to limitations in Ruby's finalization capabilities, the
     # #close method is _not_ automatically called when this object is garbage
     # collected.  Make sure to call #close when finished with this object.
-    def initialize(delegate, level = nil, window_bits = nil, mem_level = nil, strategy = nil)
-      @delegate = delegate
+    def initialize(
+      delegate,
+      autoclose: true,
+      level: nil,
+      mem_level: nil,
+      strategy: nil,
+      window_bits: nil
+    )
+      super(delegate, autoclose: autoclose)
+
       @level = level
       @window_bits = window_bits
       @mem_level = mem_level
       @strategy = strategy
       @deflater = Zlib::Deflate.new(@level, @window_bits, @mem_level, @strategy)
       @deflate_buffer = ''
+      @deflate_buffer_idx = 0
       @checksum = nil
       @compressed_size = nil
       @uncompressed_size = nil
     end
-
-    protected
-
-    # The delegate object to which compressed data is written.
-    attr_reader :delegate
-
-    public
 
     # Returns the checksum computed over the data written to this stream so far.
     #
@@ -170,23 +153,25 @@ module Zlib # :nodoc:
 
     # Closes the writer by finishing the compressed data and flushing it to the
     # delegate.
-    #
-    # Raises IOError if called more than once.
     def close
-      flush()
-      @deflate_buffer << @deflater.finish unless @deflater.finished?
-      begin
-        until @deflate_buffer.empty? do
-          @deflate_buffer.slice!(0, delegate.write(@deflate_buffer))
-        end
-      rescue Errno::EAGAIN, Errno::EINTR
-        retry if write_ready?
+      return nil if closed?
+
+      result = flush
+      return result if Symbol === result
+
+      unless @deflater.finished?
+        @deflate_buffer = @deflater.finish
+        @deflate_buffer_idx = 0
+        result = flush
+        return result if Symbol === result
       end
+
       @checksum = @deflater.adler
       @compressed_size = @deflater.total_out
       @uncompressed_size = @deflater.total_in
       @deflater.close
-      super()
+      super
+
       nil
     end
 
@@ -209,8 +194,6 @@ module Zlib # :nodoc:
       @deflater.closed? ? @uncompressed_size : @deflater.total_in
     end
 
-    private
-
     # Allows resetting this object and the delegate object back to the beginning
     # of the stream or reporting the current position in the stream.
     #
@@ -218,67 +201,55 @@ module Zlib # :nodoc:
     # IO::SEEK_SET or IO::SEEK_CUR.  Raises Errno::EINVAL if _whence_ is
     # IO::SEEK_SEK and the delegate object does not respond to the _rewind_
     # method.
-    def unbuffered_seek(offset, whence = IO::SEEK_SET)
-      unless offset == 0 &&
-             ((whence == IO::SEEK_SET && delegate.respond_to?(:rewind)) ||
-              whence == IO::SEEK_CUR) then
-        raise Errno::EINVAL
-      end
+    def seek(amount, whence = IO::SEEK_SET)
+      assert_open
+      raise Errno::ESPIPE if amount != 0 || whence == IO::SEEK_END
 
       case whence
       when IO::SEEK_SET
-        delegate.rewind
-        @deflater.finish
-        @deflater.close
-        @deflater = Zlib::Deflate.new(
-          @level, @window_bits, @mem_level, @strategy
-        )
+        delegate.seek(0, IO::SEEK_SET)
+        @deflater.reset
         @deflate_buffer = ''
+        @deflate_buffer_idx = 0
         0
       when IO::SEEK_CUR
         @deflater.total_in
       end
     end
 
-    def unbuffered_write(string)
+    def write(buffer, length: buffer.bytesize)
       # First try to write out the contents of the deflate buffer because if
       # that raises a failure we can let that pass up the call stack without
       # having polluted the deflater instance.
-      until @deflate_buffer.empty? do
-        @deflate_buffer.slice!(0, delegate.write(@deflate_buffer))
+      result = flush
+      return result if Symbol === result
+
+      buffer = buffer[0, length] unless length == buffer.bytesize
+      @deflate_buffer = @deflater.deflate(buffer)
+      @deflate_buffer_idx = 0
+
+      length
+    end
+
+    private
+
+    def flush
+      while @deflate_buffer_idx < @deflate_buffer.bytesize
+        result = delegate.write(@deflate_buffer[@deflate_buffer_idx..-1])
+        return result if Symbol === result
+        @deflate_buffer_idx += result
       end
-      # At this point we can deflate the given string into a new buffer and
-      # behave as if it was written.
-      @deflate_buffer = @deflater.deflate(string)
-      string.length
+      nil
     end
   end
 
   # Zlib::ZReader is a readable, IO-like object (includes IO::Like) which wraps
   # other readable, IO-like objects in order to facilitate reading data from
   # those objects using the inflate method of decompression.
-  class ZReader
-    include IO::Like
-
+  class ZReader < IO::LikeHelpers::DelegatedIO
     # The number of bytes to read from the delegate object each time the
     # internal read buffer is filled.
-    DEFAULT_DELEGATE_READ_SIZE = 4096
-
-    # Creates a new instance of this class with the given arguments using #new
-    # and then passes the instance to the given block.  The #close method is
-    # guaranteed to be called after the block completes.
-    #
-    # Equivalent to #new if no block is given.
-    def self.open(delegate, window_bits = nil)
-      zr = new(delegate, window_bits)
-      return zr unless block_given?
-
-      begin
-        yield(zr)
-      ensure
-        zr.close unless zr.closed?
-      end
-    end
+    DEFAULT_DELEGATE_READ_SIZE = 8192
 
     # Creates a new instance of this class.  _delegate_ must respond to the
     # _read_ method as an IO instance would.  _window_bits_ is passed directly
@@ -345,12 +316,20 @@ module Zlib # :nodoc:
     # <b>NOTE:</b> Due to limitations in Ruby's finalization capabilities, the
     # #close method is _not_ automatically called when this object is garbage
     # collected.  Make sure to call #close when finished with this object.
-    def initialize(delegate, window_bits = nil)
-      @delegate = delegate
-      @delegate_read_size = DEFAULT_DELEGATE_READ_SIZE
+    def initialize(
+      delegate,
+      autoclose: true,
+      delegate_read_size: DEFAULT_DELEGATE_READ_SIZE,
+      window_bits: nil
+    )
+      super(delegate, autoclose: autoclose)
+
+      @delegate_read_size = delegate_read_size
+      @read_buffer = "\0".b * @delegate_read_size
       @window_bits = window_bits
       @inflater = Zlib::Inflate.new(@window_bits)
       @inflate_buffer = ''
+      @inflate_buffer_idx = 0
       @checksum = nil
       @compressed_size = nil
       @uncompressed_size = nil
@@ -359,13 +338,6 @@ module Zlib # :nodoc:
     # The number of bytes to read from the delegate object each time the
     # internal read buffer is filled.
     attr_accessor :delegate_read_size
-
-    protected
-
-    # The delegate object from which compressed data is read.
-    attr_reader :delegate
-
-    public
 
     # Returns the checksum computed over the data read from this stream.
     #
@@ -384,11 +356,21 @@ module Zlib # :nodoc:
     #
     # Raises IOError if called more than once.
     def close
-      super()
+      return nil if closed?
+
+      result = super
+      return result if Symbol === result
+
       @checksum = @inflater.adler
       @compressed_size = @inflater.total_in
       @uncompressed_size = @inflater.total_out
-      @inflater.close
+      @inflate_buffer = nil
+      @inflate_buffer_idx = 0
+
+      # Avoid warnings by only attempting to close the inflater if it was
+      # correctly finished.
+      @inflater.close if @inflater.finished?
+
       nil
     end
 
@@ -408,22 +390,34 @@ module Zlib # :nodoc:
       @inflater.closed? ? @uncompressed_size : @inflater.total_out
     end
 
-    private
+    def read(length, buffer: nil)
+      length = Integer(length)
+      raise ArgumentError, 'length must be at least 0' if length < 0
 
-    def unbuffered_read(length)
-      if @inflate_buffer.empty? && @inflater.finished? then
-        raise EOFError, 'end of file reached'
+      assert_readable
+
+      if @inflate_buffer_idx >= @inflate_buffer.size
+        raise EOFError, 'end of file reached' if @inflater.finished?
+
+        @inflate_buffer =
+          begin
+            result = super(@delegate_read_size, buffer: @read_buffer)
+            return result if Symbol === result
+            @inflater.inflate(@read_buffer[0, result])
+          rescue EOFError
+            @inflater.inflate(nil)
+          end
+        @inflate_buffer_idx = 0
       end
 
-      begin
-        while @inflate_buffer.length < length && ! @inflater.finished? do
-          @inflate_buffer <<
-            @inflater.inflate(delegate.read(@delegate_read_size))
-        end
-      rescue Errno::EINTR, Errno::EAGAIN
-        raise if @inflate_buffer.empty?
-      end
-      @inflate_buffer.slice!(0, length)
+      available = @inflate_buffer.size - @inflate_buffer_idx
+      length = available if available < length
+      content = @inflate_buffer[@inflate_buffer_idx, length]
+      @inflate_buffer_idx += length
+      return content if buffer.nil?
+
+      buffer[0, length] = content
+      return length
     end
 
     # Allows resetting this object and the delegate object back to the beginning
@@ -433,22 +427,19 @@ module Zlib # :nodoc:
     # IO::SEEK_SET or IO::SEEK_CUR.  Raises Errno::EINVAL if _whence_ is
     # IO::SEEK_SEK and the delegate object does not respond to the _rewind_
     # method.
-    def unbuffered_seek(offset, whence = IO::SEEK_SET)
-      unless offset == 0 &&
-             ((whence == IO::SEEK_SET && delegate.respond_to?(:rewind)) ||
-              whence == IO::SEEK_CUR) then
-        raise Errno::EINVAL
-      end
+    def seek(amount, whence = IO::SEEK_SET)
+      assert_open
+      raise Errno::ESPIPE if amount != 0 || whence == IO::SEEK_END
 
       case whence
       when IO::SEEK_SET
-        delegate.rewind
-        @inflater.close
-        @inflater = Zlib::Inflate.new(@window_bits)
-        @inflate_buffer = ''
-        0
+        result = super
+        return result if Symbol === result
+        @inflater.reset
+        @inflate_buffer_idx = @inflate_buffer.size
+        result
       when IO::SEEK_CUR
-        @inflater.total_out - @inflate_buffer.length
+        @inflater.total_out - (@inflate_buffer.size - @inflate_buffer_idx)
       end
     end
   end

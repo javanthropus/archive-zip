@@ -1,65 +1,60 @@
 # encoding: UTF-8
 
+require 'io/like_helpers/io_wrapper'
+
+require 'archive/support/stringio'
+
 class ZlibSpecs
-  def self.compressed_data
-    File.open(
-      File.join(File.dirname(__FILE__), 'compressed_file.bin'), 'rb'
-    ) do |f|
-      block_given? ? yield(f) : f.read
-    end
+  def self.compressed_data(&b)
+    read_data(File.join(File.dirname(__FILE__), 'compressed_file.bin'), &b)
   end
 
-  def self.compressed_data_nocomp
-    File.open(
-      File.join(File.dirname(__FILE__), 'compressed_file_nocomp.bin'), 'rb'
-    ) do |f|
-      block_given? ? yield(f) : f.read
-    end
+  def self.compressed_data_nocomp(&b)
+    read_data(
+      File.join(File.dirname(__FILE__), 'compressed_file_nocomp.bin'), &b
+    )
   end
 
-  def self.compressed_data_minwin
-    File.open(
-      File.join(File.dirname(__FILE__), 'compressed_file_minwin.bin'), 'rb'
-    ) do |f|
-      block_given? ? yield(f) : f.read
-    end
+  def self.compressed_data_minwin(&b)
+    read_data(
+      File.join(File.dirname(__FILE__), 'compressed_file_minwin.bin'), &b
+    )
   end
 
-  def self.compressed_data_minmem
-    File.open(
-      File.join(File.dirname(__FILE__), 'compressed_file_minmem.bin'), 'rb'
-    ) do |f|
-      block_given? ? yield(f) : f.read
-    end
+  def self.compressed_data_minmem(&b)
+    read_data(
+      File.join(File.dirname(__FILE__), 'compressed_file_minmem.bin'), &b
+    )
   end
 
-  def self.compressed_data_huffman
-    File.open(
-      File.join(File.dirname(__FILE__), 'compressed_file_huffman.bin'), 'rb'
-    ) do |f|
-      block_given? ? yield(f) : f.read
-    end
+  def self.compressed_data_huffman(&b)
+    read_data(
+      File.join(File.dirname(__FILE__), 'compressed_file_huffman.bin'), &b
+    )
   end
 
-  def self.compressed_data_gzip
-    File.open(
-      File.join(File.dirname(__FILE__), 'compressed_file_gzip.bin'), 'rb'
-    ) do |f|
-      block_given? ? yield(f) : f.read
-    end
+  def self.compressed_data_gzip(&b)
+    read_data(File.join(File.dirname(__FILE__), 'compressed_file_gzip.bin'), &b)
   end
 
-  def self.compressed_data_raw
-    File.open(
-      File.join(File.dirname(__FILE__), 'compressed_file_raw.bin'), 'rb'
-    ) do |f|
-      block_given? ? yield(f) : f.read
-    end
+  def self.compressed_data_raw(&b)
+    read_data(File.join(File.dirname(__FILE__), 'compressed_file_raw.bin'), &b)
   end
 
-  def self.test_data
-    File.open(File.join(File.dirname(__FILE__), 'raw_file.txt'), 'rb') do |f|
-      f.read
+  def self.test_data(&b)
+    read_data(File.join(File.dirname(__FILE__), 'raw_file.txt'), &b)
+  end
+
+  def self.string_io(data = '', mode = 'r+b', &b)
+    IO::LikeHelpers::IOWrapper.open(StringIO.new(data, mode), &b)
+  end
+
+  private
+
+  def self.read_data(path, &b)
+    File.open(path, 'rb') do |f|
+      return f.read unless block_given?
+      IO::LikeHelpers::IOWrapper.open(f, &b)
     end
   end
 end

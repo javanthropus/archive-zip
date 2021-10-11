@@ -9,7 +9,7 @@ module Archive; class Zip; module Codec
   # as defined in Zlib which provides convenient interfaces for writing and
   # reading deflated streams.
   class Deflate
-    # Archive::Zip::Codec::Deflate::Compress extends Zlib::ZWriter in order to
+    # Archive::Zip::Codec::Deflate::Writer extends Zlib::ZWriter in order to
     # specify the standard Zlib options required by ZIP archives and to provide
     # a close method which can optionally close the delegate IO-like object.
     # In addition a convenience method is provided for generating DataDescriptor
@@ -17,31 +17,17 @@ module Archive; class Zip; module Codec
     #
     # Instances of this class should only be accessed via the
     # Archive::Zip::Codec::Deflate#compressor method.
-    class Compress < Zlib::ZWriter
-      # Creates a new instance of this class with the given arguments using #new
-      # and then passes the instance to the given block.  The #close method is
-      # guaranteed to be called after the block completes.
-      #
-      # Equivalent to #new if no block is given.
-      def self.open(io, compression_level)
-        deflate_io = new(io, compression_level)
-        return deflate_io unless block_given?
-
-        begin
-          yield(deflate_io)
-        ensure
-          deflate_io.close unless deflate_io.closed?
-        end
-      end
-
+    class Writer < Zlib::ZWriter
       # Creates a new instance of this class using _io_ as a data sink.  _io_
       # must be writable and must provide a _write_ method as IO does or errors
       # will be raised when performing write operations.  _compression_level_
       # must be one of Zlib::DEFAULT_COMPRESSION, Zlib::BEST_COMPRESSION,
       # Zlib::BEST_SPEED, or Zlib::NO_COMPRESSION and specifies the amount of
       # compression to be applied to the data stream.
-      def initialize(io, compression_level)
-        super(io, compression_level, -Zlib::MAX_WBITS)
+      def initialize(io, autoclose: true, level: Zlib::DEFAULT_COMPRESSION)
+        super(
+          io, autoclose: autoclose, level: level, window_bits: -Zlib::MAX_WBITS
+        )
         @crc32 = 0
       end
 
@@ -51,15 +37,7 @@ module Archive; class Zip; module Codec
       # processed, so calling #flush prior to examining this attribute may be
       # necessary for an accurate computation.
       attr_reader :crc32
-      alias :checksum :crc32
-
-      # Closes this object so that further write operations will fail.  If
-      # _close_delegate_ is +true+, the delegate object used as a data sink will
-      # also be closed using its close method.
-      def close(close_delegate = true)
-        super()
-        delegate.close if close_delegate
-      end
+      alias_method :checksum, :crc32
 
       # Returns an instance of Archive::Zip::DataDescriptor with information
       # regarding the data which has passed through this object to the delegate
@@ -71,22 +49,24 @@ module Archive; class Zip; module Codec
         DataDescriptor.new(crc32, compressed_size, uncompressed_size)
       end
 
-      private
-
-      def unbuffered_seek(offset, whence = IO::SEEK_SET)
-        result = super(offset, whence)
+      def seek(amount, whence = IO::SEEK_SET)
+        result = super
         @crc32 = 0 if whence == IO::SEEK_SET
         result
       end
 
-      def unbuffered_write(string)
-        result = super(string)
-        @crc32 = Zlib.crc32(string, @crc32)
+      def write(buffer, length: buffer.bytesize)
+        result = super
+        return result if Symbol === result
+
+        buffer = buffer[0, result] if result < buffer.bytesize
+        @crc32 = Zlib.crc32(buffer, @crc32)
+
         result
       end
     end
 
-    # Archive::Zip::Codec::Deflate::Decompress extends Zlib::ZReader in order to
+    # Archive::Zip::Codec::Deflate::Reader extends Zlib::ZReader in order to
     # specify the standard Zlib options required by ZIP archives and to provide
     # a close method which can optionally close the delegate IO-like object.
     # In addition a convenience method is provided for generating DataDescriptor
@@ -94,29 +74,13 @@ module Archive; class Zip; module Codec
     #
     # Instances of this class should only be accessed via the
     # Archive::Zip::Codec::Deflate#decompressor method.
-    class Decompress < Zlib::ZReader
-      # Creates a new instance of this class with the given arguments using #new
-      # and then passes the instance to the given block.  The #close method is
-      # guaranteed to be called after the block completes.
-      #
-      # Equivalent to #new if no block is given.
-      def self.open(io)
-        inflate_io = new(io)
-        return inflate_io unless block_given?
-
-        begin
-          yield(inflate_io)
-        ensure
-          inflate_io.close unless inflate_io.closed?
-        end
-      end
-
+    class Reader < Zlib::ZReader
       # Creates a new instance of this class using _io_ as a data source.  _io_
       # must be readable and provide a _read_ method as IO does or errors will
       # be raised when performing read operations.  If _io_ provides a _rewind_
       # method, this class' _rewind_ method will be enabled.
-      def initialize(io)
-        super(io, -Zlib::MAX_WBITS)
+      def initialize(io, autoclose: true)
+        super(io, autoclose: autoclose, window_bits: -Zlib::MAX_WBITS)
         @crc32 = 0
       end
 
@@ -126,15 +90,7 @@ module Archive; class Zip; module Codec
       # processed any time the internal buffer is filled, so this checksum is
       # only accurate if all data has been read out of this object.
       attr_reader :crc32
-      alias :checksum :crc32
-
-      # Closes this object so that further read operations will fail.  If
-      # _close_delegate_ is +true+, the delegate object used as a data source
-      # will also be closed using its close method.
-      def close(close_delegate = true)
-        super()
-        delegate.close if close_delegate
-      end
+      alias_method :checksum, :crc32
 
       # Returns an instance of Archive::Zip::DataDescriptor with information
       # regarding the data which has passed through this object from the
@@ -145,16 +101,19 @@ module Archive; class Zip; module Codec
         DataDescriptor.new(crc32, compressed_size, uncompressed_size)
       end
 
-      private
+      def read(length, buffer: nil)
+        result = super
+        return result if Symbol === result
 
-      def unbuffered_read(length)
-        result = super(length)
-        @crc32 = Zlib.crc32(result, @crc32)
+        buffer = result if buffer.nil?
+        buffer = buffer[0, length] if length < buffer.bytesize
+        @crc32 = Zlib.crc32(buffer, @crc32)
+
         result
       end
 
-      def unbuffered_seek(offset, whence = IO::SEEK_SET)
-        result = super(offset, whence)
+      def seek(amount, whence = IO::SEEK_SET)
+        result = super
         @crc32 = 0 if whence == IO::SEEK_SET
         result
       end
@@ -207,21 +166,21 @@ module Archive; class Zip; module Codec
     # Archive::Zip::Entry for compression codec objects.
     #
     # A convenience method for creating an
-    # Archive::Zip::Codec::Deflate::Compress object using that class' open
+    # Archive::Zip::Codec::Deflate::Writer object using that class' open
     # method.  The compression level for the open method is pulled from the
     # value of the _general_purpose_flags_ argument of new.
     def compressor(io, &b)
-      Compress.open(io, @zlib_compression_level, &b)
+      Writer.open(io, level: @zlib_compression_level, &b)
     end
 
     # This method signature is part of the interface contract expected by
     # Archive::Zip::Entry for compression codec objects.
     #
     # A convenience method for creating an
-    # Archive::Zip::Codec::Deflate::Decompress object using that class' open
+    # Archive::Zip::Codec::Deflate::Reader object using that class' open
     # method.
     def decompressor(io, &b)
-      Decompress.open(io, &b)
+      Reader.open(io, &b)
     end
 
     # This method signature is part of the interface contract expected by

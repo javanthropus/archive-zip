@@ -112,7 +112,7 @@ module Archive # :nodoc:
       begin
         yield(zf)
       ensure
-        zf.close unless zf.closed?
+        zf.close
       end
     end
 
@@ -164,10 +164,8 @@ module Archive # :nodoc:
     #
     # <b>NOTE:</b> The underlying stream is only closed if the archive was
     # opened with a String for the _archive_ parameter.
-    #
-    # Raises Archive::Zip::IOError if called more than once.
     def close
-      raise IOError, 'closed archive' if closed?
+      return nil if closed?
 
       if writable? then
         # Write the new archive contents.

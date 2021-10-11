@@ -22,7 +22,7 @@ describe 'Archive::Zip#archive' do
         entry.wont_be_nil
         entry.zip_path.must_equal(file_name)
         entry.file?.must_equal(true)
-        entry.file_data.read.must_equal('data')
+        entry.file_data.read(8192).must_equal('data')
       end
     end
   end
@@ -47,7 +47,7 @@ describe 'Archive::Zip#archive' do
         entry.wont_be_nil
         entry.zip_path.must_equal(mb_file_name.dup.force_encoding('binary'))
         entry.file?.must_equal(true)
-        entry.file_data.read.must_equal('data')
+        entry.file_data.read(8192).must_equal('data')
       end
     end
   end
