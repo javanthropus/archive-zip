@@ -20,7 +20,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer#write' do
         end
       end
       sio.seek(0)
-      sio.read(8192).must_equal(DeflateSpecs.compressed_data)
+      _(sio.read(8192)).must_equal(DeflateSpecs.compressed_data)
     end
   end
 
@@ -46,7 +46,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer#write' do
       end
 
       sio.seek(0)
-      sio.read(8192).must_equal(DeflateSpecs.compressed_data)
+      _(sio.read(8192)).must_equal(DeflateSpecs.compressed_data)
     end
   end
 
@@ -85,7 +85,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer#write' do
       end
 
       sio.seek(0)
-      sio.read(8192).must_equal(DeflateSpecs.compressed_data)
+      _(sio.read(8192)).must_equal(DeflateSpecs.compressed_data)
     end
   end
 end

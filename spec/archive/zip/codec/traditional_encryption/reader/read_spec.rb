@@ -14,7 +14,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |d|
-        d.read(8192).must_equal(TraditionalEncryptionSpecs.test_data)
+        _(d.read(8192)).must_equal(TraditionalEncryptionSpecs.test_data)
       end
     end
   end
@@ -28,8 +28,8 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
       ) do |d|
         buffer = ''
         bytes_read = d.read(8192, buffer: buffer)
-        bytes_read.must_equal(TraditionalEncryptionSpecs.test_data.bytesize)
-        buffer[0, bytes_read].must_equal(TraditionalEncryptionSpecs.test_data)
+        _(bytes_read).must_equal(TraditionalEncryptionSpecs.test_data.bytesize)
+        _(buffer[0, bytes_read]).must_equal(TraditionalEncryptionSpecs.test_data)
       end
     end
   end
@@ -59,7 +59,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
         rescue EOFError
           # Finished reading.
         end
-        buffer.must_equal(TraditionalEncryptionSpecs.test_data)
+        _(buffer).must_equal(TraditionalEncryptionSpecs.test_data)
       end
     end
   end
@@ -97,7 +97,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
         rescue EOFError
           # Finished reading.
         end
-        buffer.must_equal(TraditionalEncryptionSpecs.test_data)
+        _(buffer).must_equal(TraditionalEncryptionSpecs.test_data)
       end
     end
   end

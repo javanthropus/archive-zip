@@ -19,10 +19,10 @@ describe 'Archive::Zip#archive' do
 
       Archive::Zip.open(archive_file_path, 'r') do |a|
         entry = a.first
-        entry.wont_be_nil
-        entry.zip_path.must_equal(file_name)
-        entry.file?.must_equal(true)
-        entry.file_data.read(8192).must_equal('data')
+        _(entry).wont_be_nil
+        _(entry.zip_path).must_equal(file_name)
+        _(entry.file?).must_equal(true)
+        _(entry.file_data.read(8192)).must_equal('data')
       end
     end
   end
@@ -44,10 +44,10 @@ describe 'Archive::Zip#archive' do
 
       Archive::Zip.open(archive_file_path, 'r') do |a|
         entry = a.first
-        entry.wont_be_nil
-        entry.zip_path.must_equal(mb_file_name.dup.force_encoding('binary'))
-        entry.file?.must_equal(true)
-        entry.file_data.read(8192).must_equal('data')
+        _(entry).wont_be_nil
+        _(entry.zip_path).must_equal(mb_file_name.dup.force_encoding('binary'))
+        _(entry.file?).must_equal(true)
+        _(entry.file_data.read(8192)).must_equal('data')
       end
     end
   end

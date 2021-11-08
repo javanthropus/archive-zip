@@ -13,7 +13,7 @@ describe 'Archive::Zip::Codec::Store::Writer#write' do
         c.write(StoreSpecs.test_data)
       end
       sio.seek(0)
-      sio.read(8192).must_equal(StoreSpecs.compressed_data)
+      _(sio.read(8192)).must_equal(StoreSpecs.compressed_data)
     end
   end
 end

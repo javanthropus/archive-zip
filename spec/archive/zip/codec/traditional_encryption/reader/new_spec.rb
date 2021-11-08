@@ -14,7 +14,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader.new' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       )
-      d.must_be_instance_of(Archive::Zip::Codec::TraditionalEncryption::Reader)
+      _(d).must_be_instance_of(Archive::Zip::Codec::TraditionalEncryption::Reader)
       d.close
     end
   end
@@ -27,7 +27,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader.new' do
         TraditionalEncryptionSpecs.mtime
       )
       d.close
-      ed.closed?.must_equal true
+      _(ed.closed?).must_equal true
     end
   end
 
@@ -40,7 +40,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader.new' do
         autoclose: false
       )
       d.close
-      ed.closed?.must_equal false
+      _(ed.closed?).must_equal false
     end
   end
 end

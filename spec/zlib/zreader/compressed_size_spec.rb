@@ -11,10 +11,10 @@ describe 'Zlib::ZReader#compressed_size' do
     closed_zr = ZlibSpecs.compressed_data_raw do |compressed_data|
       Zlib::ZReader.open(compressed_data, window_bits: -15) do |zr|
         zr.read(8192)
-        zr.compressed_size.must_equal 160
+        _(zr.compressed_size).must_equal 160
         zr
       end
     end
-    closed_zr.compressed_size.must_equal 160
+    _(closed_zr.compressed_size).must_equal 160
   end
 end

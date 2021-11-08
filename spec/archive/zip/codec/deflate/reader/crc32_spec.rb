@@ -12,10 +12,10 @@ describe 'Archive::Zip::Deflate::Reader#crc32' do
     closed_reader = DeflateSpecs.compressed_data do |cd|
       Archive::Zip::Codec::Deflate::Reader.open(cd) do |reader|
         reader.read(8192)
-        reader.crc32.must_equal crc32
+        _(reader.crc32).must_equal crc32
         reader
       end
     end
-    closed_reader.crc32.must_equal crc32
+    _(closed_reader.crc32).must_equal crc32
   end
 end

@@ -11,7 +11,7 @@ describe 'Zlib::ZWriter#seek' do
     ZlibSpecs.string_io do |sio|
       Zlib::ZWriter.open(sio) do |zw|
         zw.write('test')
-        zw.seek(0).must_equal 0
+        _(zw.seek(0)).must_equal 0
       end
     end
   end
@@ -20,7 +20,7 @@ describe 'Zlib::ZWriter#seek' do
     ZlibSpecs.string_io do |sio|
       Zlib::ZWriter.open(sio) do |zw|
         zw.write('test')
-        zw.seek(0, IO::SEEK_CUR).must_equal 4
+        _(zw.seek(0, IO::SEEK_CUR)).must_equal 4
       end
     end
   end
@@ -33,7 +33,7 @@ describe 'Zlib::ZWriter#seek' do
 
       Zlib::ZWriter.open(sio) do |zw|
         zw.write('test')
-        lambda { zw.seek(0) }.must_raise Errno::ESPIPE
+        _(lambda { zw.seek(0) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -42,8 +42,8 @@ describe 'Zlib::ZWriter#seek' do
     ZlibSpecs.string_io do |sio|
       Zlib::ZWriter.open(sio) do |zw|
         zw.write('test')
-        lambda { zw.seek(1, IO::SEEK_CUR) }.must_raise Errno::ESPIPE
-        lambda { zw.seek(-1, IO::SEEK_CUR) }.must_raise Errno::ESPIPE
+        _(lambda { zw.seek(1, IO::SEEK_CUR) }).must_raise Errno::ESPIPE
+        _(lambda { zw.seek(-1, IO::SEEK_CUR) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -52,8 +52,8 @@ describe 'Zlib::ZWriter#seek' do
     ZlibSpecs.string_io do |sio|
       Zlib::ZWriter.open(sio) do |zw|
         zw.write('test')
-        lambda { zw.seek(1, IO::SEEK_SET) }.must_raise Errno::ESPIPE
-        lambda { zw.seek(-1, IO::SEEK_SET) }.must_raise Errno::ESPIPE
+        _(lambda { zw.seek(1, IO::SEEK_SET) }).must_raise Errno::ESPIPE
+        _(lambda { zw.seek(-1, IO::SEEK_SET) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -62,9 +62,9 @@ describe 'Zlib::ZWriter#seek' do
     ZlibSpecs.string_io do |sio|
       Zlib::ZWriter.open(sio) do |zw|
         zw.write('test')
-        lambda { zw.seek(0, IO::SEEK_END) }.must_raise Errno::ESPIPE
-        lambda { zw.seek(1, IO::SEEK_END) }.must_raise Errno::ESPIPE
-        lambda { zw.seek(-1, IO::SEEK_END) }.must_raise Errno::ESPIPE
+        _(lambda { zw.seek(0, IO::SEEK_END) }).must_raise Errno::ESPIPE
+        _(lambda { zw.seek(1, IO::SEEK_END) }).must_raise Errno::ESPIPE
+        _(lambda { zw.seek(-1, IO::SEEK_END) }).must_raise Errno::ESPIPE
       end
     end
   end

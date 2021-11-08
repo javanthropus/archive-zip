@@ -14,7 +14,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Writer.new' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       )
-      e.must_be_instance_of(Archive::Zip::Codec::TraditionalEncryption::Writer)
+      _(e).must_be_instance_of(Archive::Zip::Codec::TraditionalEncryption::Writer)
       e.close
     end
   end
@@ -27,7 +27,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Writer.new' do
         TraditionalEncryptionSpecs.mtime
       )
       e.close
-      sio.closed?.must_equal true
+      _(sio.closed?).must_equal true
     end
   end
 
@@ -40,7 +40,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Writer.new' do
         autoclose: false
       )
       e.close
-      sio.closed?.must_equal false
+      _(sio.closed?).must_equal false
     end
   end
 end

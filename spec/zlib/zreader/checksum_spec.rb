@@ -11,11 +11,11 @@ describe 'Zlib::ZReader#checksum' do
     closed_zr = ZlibSpecs.compressed_data do |f|
       Zlib::ZReader.open(f, window_bits: 15) do |zr|
         zr.read(8192)
-        zr.checksum.must_equal Zlib.adler32(ZlibSpecs.test_data)
+        _(zr.checksum).must_equal Zlib.adler32(ZlibSpecs.test_data)
         zr
       end
     end
-    closed_zr.checksum.must_equal Zlib.adler32(ZlibSpecs.test_data)
+    _(closed_zr.checksum).must_equal Zlib.adler32(ZlibSpecs.test_data)
   end
 
   it 'computes the CRC32 checksum of gzip formatted data' do
@@ -23,21 +23,21 @@ describe 'Zlib::ZReader#checksum' do
     closed_zr = ZlibSpecs.compressed_data_gzip do |f|
       Zlib::ZReader.open(f, window_bits: 31) do |zr|
         zr.read(8192)
-        zr.checksum.must_equal crc32
+        _(zr.checksum).must_equal crc32
         zr
       end
     end
-    closed_zr.checksum.must_equal crc32
+    _(closed_zr.checksum).must_equal crc32
   end
 
   it 'does not compute a checksum for raw zlib data' do
     closed_zr = ZlibSpecs.compressed_data_raw do |f|
       Zlib::ZReader.open(f, window_bits: -15) do |zr|
         zr.read(8192)
-        zr.checksum.must_be_nil
+        _(zr.checksum).must_be_nil
         zr
       end
     end
-    closed_zr.checksum.must_be_nil
+    _(closed_zr.checksum).must_be_nil
   end
 end

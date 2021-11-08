@@ -13,12 +13,12 @@ describe 'Archive::Zip::Codec::Deflate::Reader#data_descriptor' do
         cd
       ) do |reader|
         reader.read(8192)
-        reader.data_descriptor.must_be_instance_of(
+        _(reader.data_descriptor).must_be_instance_of(
           Archive::Zip::DataDescriptor
         )
         reader
       end
-      closed_reader.data_descriptor.must_be_instance_of(
+      _(closed_reader.data_descriptor).must_be_instance_of(
         Archive::Zip::DataDescriptor
       )
     end
@@ -31,10 +31,10 @@ describe 'Archive::Zip::Codec::Deflate::Reader#data_descriptor' do
         cd
       ) do |reader|
         reader.read(8192)
-        reader.data_descriptor.crc32.must_equal crc32
+        _(reader.data_descriptor.crc32).must_equal crc32
         reader
       end
-      closed_reader.data_descriptor.crc32.must_equal crc32
+      _(closed_reader.data_descriptor.crc32).must_equal crc32
     end
   end
 
@@ -45,10 +45,10 @@ describe 'Archive::Zip::Codec::Deflate::Reader#data_descriptor' do
         cd
       ) do |reader|
         reader.read(8192)
-        reader.data_descriptor.compressed_size.must_equal compressed_size
+        _(reader.data_descriptor.compressed_size).must_equal compressed_size
         reader
       end
-      closed_reader.data_descriptor.compressed_size.must_equal(
+      _(closed_reader.data_descriptor.compressed_size).must_equal(
         compressed_size
       )
     end
@@ -61,12 +61,12 @@ describe 'Archive::Zip::Codec::Deflate::Reader#data_descriptor' do
         cd
       ) do |reader|
         reader.read(8192)
-        reader.data_descriptor.uncompressed_size.must_equal(
+        _(reader.data_descriptor.uncompressed_size).must_equal(
           uncompressed_size
         )
         reader
       end
-      closed_reader.data_descriptor.uncompressed_size.must_equal(
+      _(closed_reader.data_descriptor.uncompressed_size).must_equal(
         uncompressed_size
       )
     end

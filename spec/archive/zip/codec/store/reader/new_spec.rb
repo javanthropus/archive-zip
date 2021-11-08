@@ -10,7 +10,7 @@ describe 'Archive::Zip::Codec::Store::Reader.new' do
   it 'returns a new instance' do
     StoreSpecs.string_io do |sio|
       d = Archive::Zip::Codec::Store::Reader.new(sio)
-      d.must_be_instance_of(Archive::Zip::Codec::Store::Reader)
+      _(d).must_be_instance_of(Archive::Zip::Codec::Store::Reader)
       d.close
     end
   end
@@ -19,7 +19,7 @@ describe 'Archive::Zip::Codec::Store::Reader.new' do
     StoreSpecs.string_io do |sio|
       d = Archive::Zip::Codec::Store::Reader.new(sio)
       d.close
-      sio.closed?.must_equal true
+      _(sio.closed?).must_equal true
     end
   end
 
@@ -27,7 +27,7 @@ describe 'Archive::Zip::Codec::Store::Reader.new' do
     StoreSpecs.string_io do |sio|
       d = Archive::Zip::Codec::Store::Reader.new(sio, autoclose: false)
       d.close
-      sio.closed?.must_equal false
+      _(sio.closed?).must_equal false
     end
   end
 end

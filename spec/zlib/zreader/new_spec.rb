@@ -10,7 +10,7 @@ describe 'Zlib::ZReader.new' do
   it 'returns a new instance' do
     ZlibSpecs.compressed_data do |cd|
       zr = Zlib::ZReader.new(cd)
-      zr.class.must_equal Zlib::ZReader
+      _(zr.class).must_equal Zlib::ZReader
       zr.close
     end
   end
@@ -19,7 +19,7 @@ describe 'Zlib::ZReader.new' do
     ZlibSpecs.compressed_data do |cd|
       zr = Zlib::ZReader.new(cd)
       zr.close
-      cd.closed?.must_equal true
+      _(cd.closed?).must_equal true
     end
   end
 
@@ -27,7 +27,7 @@ describe 'Zlib::ZReader.new' do
     ZlibSpecs.compressed_data do |cd|
       zr = Zlib::ZReader.new(cd, autoclose: false)
       zr.close
-      cd.closed?.must_equal false
+      _(cd.closed?).must_equal false
     end
   end
 
@@ -40,7 +40,7 @@ describe 'Zlib::ZReader.new' do
     compressed_data.seek(0)
 
     zr = Zlib::ZReader.new(compressed_data)
-    zr.read(8192).must_equal data
+    _(zr.read(8192)).must_equal data
     zr.close
   end
 
@@ -59,7 +59,7 @@ describe 'Zlib::ZReader.new' do
     compressed_data.seek(0)
 
     zr = Zlib::ZReader.new(compressed_data, window_bits: window_bits)
-    zr.read(8192).must_equal data
+    _(zr.read(8192)).must_equal data
     zr.close
   end
 end

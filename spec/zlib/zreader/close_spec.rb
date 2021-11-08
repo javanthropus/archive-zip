@@ -11,7 +11,7 @@ describe 'Zlib::ZReader.close' do
     ZlibSpecs.compressed_data do |cd|
       zr = Zlib::ZReader.new(cd)
       zr.close
-      zr.closed?.must_equal true
+      _(zr.closed?).must_equal true
     end
   end
 end

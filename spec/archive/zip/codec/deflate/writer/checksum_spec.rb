@@ -16,10 +16,10 @@ describe 'Archive::Zip::Codec::Deflate::Writer#checksum' do
       ) do |compressor|
         compressor.write(test_data)
         compressor.write('') # Causes a flush to the deflater
-        compressor.checksum.must_equal crc32
+        _(compressor.checksum).must_equal crc32
         compressor
       end
-      closed_compressor.checksum.must_equal crc32
+      _(closed_compressor.checksum).must_equal crc32
     end
   end
 end

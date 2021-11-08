@@ -10,7 +10,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer.new' do
   it 'returns a new instance' do
     DeflateSpecs.string_io do |sio|
       c = Archive::Zip::Codec::Deflate::Writer.new(sio)
-      c.must_be_instance_of Archive::Zip::Codec::Deflate::Writer
+      _(c).must_be_instance_of Archive::Zip::Codec::Deflate::Writer
       c.close
     end
   end
@@ -19,7 +19,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer.new' do
     DeflateSpecs.string_io do |sio|
       c = Archive::Zip::Codec::Deflate::Writer.new(sio)
       c.close
-      sio.closed?.must_equal true
+      _(sio.closed?).must_equal true
     end
   end
 
@@ -27,7 +27,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer.new' do
     DeflateSpecs.string_io do |sio|
       c = Archive::Zip::Codec::Deflate::Writer.new(sio, autoclose: false)
       c.close
-      sio.closed?.must_equal false
+      _(sio.closed?).must_equal false
     end
   end
 
@@ -41,7 +41,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer.new' do
       c.close
 
       sio.seek(0)
-      sio.read(8192).must_equal DeflateSpecs.compressed_data
+      _(sio.read(8192)).must_equal DeflateSpecs.compressed_data
     end
 
     DeflateSpecs.string_io do |sio|
@@ -52,7 +52,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer.new' do
       c.close
 
       sio.seek(0)
-      sio.read(8192).must_equal DeflateSpecs.compressed_data_nocomp
+      _(sio.read(8192)).must_equal DeflateSpecs.compressed_data_nocomp
     end
   end
 end

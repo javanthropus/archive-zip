@@ -20,7 +20,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Writer#write' do
         e.write(test_data)
 
         sio.seek(0)
-        sio.read(8192).must_equal(TraditionalEncryptionSpecs.encrypted_data)
+        _(sio.read(8192)).must_equal(TraditionalEncryptionSpecs.encrypted_data)
       end
     end
   end
@@ -52,7 +52,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Writer#write' do
         end
 
         sio.seek(0)
-        sio.read(8192).must_equal(TraditionalEncryptionSpecs.encrypted_data)
+        _(sio.read(8192)).must_equal(TraditionalEncryptionSpecs.encrypted_data)
       end
     end
   end
@@ -93,7 +93,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Writer#write' do
       end
 
       sio.seek(0)
-      sio.read(8192).must_equal(TraditionalEncryptionSpecs.encrypted_data)
+      _(sio.read(8192)).must_equal(TraditionalEncryptionSpecs.encrypted_data)
     end
   end
 end

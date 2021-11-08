@@ -15,10 +15,10 @@ describe 'Archive::Zip::Codec::Deflate::Writer#data_descriptor' do
       ) do |compressor|
         compressor.write(test_data)
         compressor.write('') # Causes a flush to the deflater
-        compressor.data_descriptor.class.must_equal Archive::Zip::DataDescriptor
+        _(compressor.data_descriptor.class).must_equal Archive::Zip::DataDescriptor
         compressor
       end
-      closed_compressor.data_descriptor.class.must_equal(
+      _(closed_compressor.data_descriptor.class).must_equal(
         Archive::Zip::DataDescriptor
       )
     end
@@ -33,10 +33,10 @@ describe 'Archive::Zip::Codec::Deflate::Writer#data_descriptor' do
       ) do |compressor|
         compressor.write(test_data)
         compressor.write('') # Causes a flush to the deflater
-        compressor.data_descriptor.crc32.must_equal crc32
+        _(compressor.data_descriptor.crc32).must_equal crc32
         compressor
       end
-      closed_compressor.data_descriptor.crc32.must_equal crc32
+      _(closed_compressor.data_descriptor.crc32).must_equal crc32
     end
   end
 
@@ -49,10 +49,10 @@ describe 'Archive::Zip::Codec::Deflate::Writer#data_descriptor' do
       ) do |compressor|
         compressor.write(test_data)
         compressor.write('') # Causes a flush to the deflater
-        compressor.data_descriptor.compressed_size.must_be :>=, 0
+        _(compressor.data_descriptor.compressed_size).must_be :>=, 0
         compressor
       end
-      closed_compressor.data_descriptor.compressed_size.must_equal size
+      _(closed_compressor.data_descriptor.compressed_size).must_equal size
     end
   end
 
@@ -65,10 +65,10 @@ describe 'Archive::Zip::Codec::Deflate::Writer#data_descriptor' do
       ) do |compressor|
         compressor.write(test_data)
         compressor.write('') # Causes a flush to the deflater
-        compressor.data_descriptor.uncompressed_size.must_equal size
+        _(compressor.data_descriptor.uncompressed_size).must_equal size
         compressor
       end
-      closed_compressor.data_descriptor.uncompressed_size.must_equal size
+      _(closed_compressor.data_descriptor.uncompressed_size).must_equal size
     end
   end
 end

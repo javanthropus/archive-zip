@@ -11,7 +11,7 @@ describe 'Archive::Zip::Codec::Store::Reader#seek' do
     StoreSpecs.compressed_data do |cd|
       Archive::Zip::Codec::Store::Reader.open(cd) do |d|
         d.read(4)
-        d.seek(0).must_equal 0
+        _(d.seek(0)).must_equal 0
       end
     end
   end
@@ -20,7 +20,7 @@ describe 'Archive::Zip::Codec::Store::Reader#seek' do
     StoreSpecs.compressed_data do |cd|
       Archive::Zip::Codec::Store::Reader.open(cd) do |d|
         d.read(4)
-        d.seek(0, IO::SEEK_CUR).must_equal 4
+        _(d.seek(0, IO::SEEK_CUR)).must_equal 4
       end
     end
   end
@@ -33,7 +33,7 @@ describe 'Archive::Zip::Codec::Store::Reader#seek' do
 
       Archive::Zip::Codec::Store::Reader.open(cd) do |d|
         d.read(4)
-        lambda { d.seek(0) }.must_raise Errno::ESPIPE
+        _(lambda { d.seek(0) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -42,8 +42,8 @@ describe 'Archive::Zip::Codec::Store::Reader#seek' do
     StoreSpecs.compressed_data do |cd|
       Archive::Zip::Codec::Store::Reader.open(cd) do |d|
         d.read(4)
-        lambda { d.seek(1, IO::SEEK_CUR) }.must_raise Errno::ESPIPE
-        lambda { d.seek(-1, IO::SEEK_CUR) }.must_raise Errno::ESPIPE
+        _(lambda { d.seek(1, IO::SEEK_CUR) }).must_raise Errno::ESPIPE
+        _(lambda { d.seek(-1, IO::SEEK_CUR) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -51,8 +51,8 @@ describe 'Archive::Zip::Codec::Store::Reader#seek' do
   it 'raises Errno::ESPIPE when seeking a non-zero offset relative to the beginning of the stream' do
     StoreSpecs.compressed_data do |cd|
       Archive::Zip::Codec::Store::Reader.open(cd) do |d|
-        lambda { d.seek(-1, IO::SEEK_SET) }.must_raise Errno::ESPIPE
-        lambda { d.seek(1, IO::SEEK_SET) }.must_raise Errno::ESPIPE
+        _(lambda { d.seek(-1, IO::SEEK_SET) }).must_raise Errno::ESPIPE
+        _(lambda { d.seek(1, IO::SEEK_SET) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -60,9 +60,9 @@ describe 'Archive::Zip::Codec::Store::Reader#seek' do
   it 'raises Errno::ESPIPE when seeking relative to the end of the stream' do
     StoreSpecs.compressed_data do |cd|
       Archive::Zip::Codec::Store::Reader.open(cd) do |d|
-        lambda { d.seek(0, IO::SEEK_END) }.must_raise Errno::ESPIPE
-        lambda { d.seek(-1, IO::SEEK_END) }.must_raise Errno::ESPIPE
-        lambda { d.seek(1, IO::SEEK_END) }.must_raise Errno::ESPIPE
+        _(lambda { d.seek(0, IO::SEEK_END) }).must_raise Errno::ESPIPE
+        _(lambda { d.seek(-1, IO::SEEK_END) }).must_raise Errno::ESPIPE
+        _(lambda { d.seek(1, IO::SEEK_END) }).must_raise Errno::ESPIPE
       end
     end
   end

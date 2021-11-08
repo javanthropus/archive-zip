@@ -11,7 +11,7 @@ describe 'Archive::Zip::Codec::Store::Writer#seek' do
     StoreSpecs.string_io do |sio|
       Archive::Zip::Codec::Store::Writer.open(sio) do |c|
         c.write('test')
-        c.seek(0).must_equal 0
+        _(c.seek(0)).must_equal 0
       end
     end
   end
@@ -20,7 +20,7 @@ describe 'Archive::Zip::Codec::Store::Writer#seek' do
     StoreSpecs.string_io do |sio|
       Archive::Zip::Codec::Store::Writer.open(sio) do |c|
         c.write('test')
-        c.seek(0, IO::SEEK_CUR).must_equal 4
+        _(c.seek(0, IO::SEEK_CUR)).must_equal 4
       end
     end
   end
@@ -32,7 +32,7 @@ describe 'Archive::Zip::Codec::Store::Writer#seek' do
       end
 
       Archive::Zip::Codec::Store::Writer.open(sio) do |c|
-        lambda { c.seek(0) }.must_raise Errno::ESPIPE
+        _(lambda { c.seek(0) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -41,8 +41,8 @@ describe 'Archive::Zip::Codec::Store::Writer#seek' do
     StoreSpecs.string_io do |sio|
       Archive::Zip::Codec::Store::Writer.open(sio) do |c|
         c.write('test')
-        lambda { c.seek(1, IO::SEEK_CUR) }.must_raise Errno::ESPIPE
-        lambda { c.seek(-1, IO::SEEK_CUR) }.must_raise Errno::ESPIPE
+        _(lambda { c.seek(1, IO::SEEK_CUR) }).must_raise Errno::ESPIPE
+        _(lambda { c.seek(-1, IO::SEEK_CUR) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -50,8 +50,8 @@ describe 'Archive::Zip::Codec::Store::Writer#seek' do
   it 'raises Errno::ESPIPE when seeking a non-zero offset relative to the beginning of the stream' do
     StoreSpecs.string_io do |sio|
       Archive::Zip::Codec::Store::Writer.open(sio) do |c|
-        lambda { c.seek(-1, IO::SEEK_SET) }.must_raise Errno::ESPIPE
-        lambda { c.seek(1, IO::SEEK_SET) }.must_raise Errno::ESPIPE
+        _(lambda { c.seek(-1, IO::SEEK_SET) }).must_raise Errno::ESPIPE
+        _(lambda { c.seek(1, IO::SEEK_SET) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -59,9 +59,9 @@ describe 'Archive::Zip::Codec::Store::Writer#seek' do
   it 'raises Errno::ESPIPE when seeking relative to the end of the stream' do
     StoreSpecs.string_io do |sio|
       Archive::Zip::Codec::Store::Writer.open(sio) do |c|
-        lambda { c.seek(0, IO::SEEK_END) }.must_raise Errno::ESPIPE
-        lambda { c.seek(-1, IO::SEEK_END) }.must_raise Errno::ESPIPE
-        lambda { c.seek(1, IO::SEEK_END) }.must_raise Errno::ESPIPE
+        _(lambda { c.seek(0, IO::SEEK_END) }).must_raise Errno::ESPIPE
+        _(lambda { c.seek(-1, IO::SEEK_END) }).must_raise Errno::ESPIPE
+        _(lambda { c.seek(1, IO::SEEK_END) }).must_raise Errno::ESPIPE
       end
     end
   end

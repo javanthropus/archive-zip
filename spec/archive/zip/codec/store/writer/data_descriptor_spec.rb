@@ -15,12 +15,12 @@ describe 'Archive::Zip::Codec::Store::Writer#data_descriptor' do
         sio
       ) do |compressor|
         compressor.write(test_data)
-        compressor.data_descriptor.must_be_instance_of(
+        _(compressor.data_descriptor).must_be_instance_of(
           Archive::Zip::DataDescriptor
         )
         compressor
       end
-      closed_compressor.data_descriptor.must_be_instance_of(
+      _(closed_compressor.data_descriptor).must_be_instance_of(
         Archive::Zip::DataDescriptor
       )
     end
@@ -34,10 +34,10 @@ describe 'Archive::Zip::Codec::Store::Writer#data_descriptor' do
         sio
       ) do |compressor|
         compressor.write(test_data)
-        compressor.data_descriptor.crc32.must_equal crc32
+        _(compressor.data_descriptor.crc32).must_equal crc32
         compressor
       end
-      closed_compressor.data_descriptor.crc32.must_equal crc32
+      _(closed_compressor.data_descriptor.crc32).must_equal crc32
     end
   end
 
@@ -49,10 +49,10 @@ describe 'Archive::Zip::Codec::Store::Writer#data_descriptor' do
         sio
       ) do |compressor|
         compressor.write(test_data)
-        compressor.data_descriptor.compressed_size.must_equal size
+        _(compressor.data_descriptor.compressed_size).must_equal size
         compressor
       end
-      closed_compressor.data_descriptor.compressed_size.must_equal size
+      _(closed_compressor.data_descriptor.compressed_size).must_equal size
     end
   end
 
@@ -64,10 +64,10 @@ describe 'Archive::Zip::Codec::Store::Writer#data_descriptor' do
         sio
       ) do |compressor|
         compressor.write(test_data)
-        compressor.data_descriptor.uncompressed_size.must_equal size
+        _(compressor.data_descriptor.uncompressed_size).must_equal size
         compressor
       end
-      closed_compressor.data_descriptor.uncompressed_size.must_equal size
+      _(closed_compressor.data_descriptor.uncompressed_size).must_equal size
     end
   end
 end

@@ -10,7 +10,7 @@ describe 'Zlib::ZWriter.new' do
   it 'returns a new instance' do
     ZlibSpecs.string_io do |sio|
       zw = Zlib::ZWriter.new(sio)
-      zw.class.must_equal Zlib::ZWriter
+      _(zw.class).must_equal Zlib::ZWriter
       zw.close
     end
   end
@@ -19,7 +19,7 @@ describe 'Zlib::ZWriter.new' do
     ZlibSpecs.string_io do |sio|
       zw = Zlib::ZWriter.new(sio)
       zw.close
-      sio.closed?.must_equal true
+      _(sio.closed?).must_equal true
     end
   end
 
@@ -27,7 +27,7 @@ describe 'Zlib::ZWriter.new' do
     ZlibSpecs.string_io do |sio|
       zw = Zlib::ZWriter.new(sio, autoclose: false)
       zw.close
-      sio.closed?.must_equal false
+      _(sio.closed?).must_equal false
     end
   end
 
@@ -39,7 +39,7 @@ describe 'Zlib::ZWriter.new' do
       zw.close
 
       sio.seek(0)
-      sio.read(8192).must_equal ZlibSpecs.compressed_data
+      _(sio.read(8192)).must_equal ZlibSpecs.compressed_data
     end
   end
 
@@ -51,7 +51,7 @@ describe 'Zlib::ZWriter.new' do
       zw.close
 
       sio.seek(0)
-      sio.read(8192).must_equal ZlibSpecs.compressed_data_nocomp
+      _(sio.read(8192)).must_equal ZlibSpecs.compressed_data_nocomp
     end
   end
 
@@ -63,7 +63,7 @@ describe 'Zlib::ZWriter.new' do
       zw.close
 
       sio.seek(0)
-      sio.read(8192).must_equal ZlibSpecs.compressed_data_minwin
+      _(sio.read(8192)).must_equal ZlibSpecs.compressed_data_minwin
     end
   end
 
@@ -75,7 +75,7 @@ describe 'Zlib::ZWriter.new' do
       zw.close
 
       sio.seek(0)
-      sio.read(8192).must_equal ZlibSpecs.compressed_data_minmem
+      _(sio.read(8192)).must_equal ZlibSpecs.compressed_data_minmem
     end
   end
 
@@ -88,7 +88,7 @@ describe 'Zlib::ZWriter.new' do
       zw.close
 
       sio.seek(0)
-      sio.read(8192).must_equal ZlibSpecs.compressed_data_huffman
+      _(sio.read(8192)).must_equal ZlibSpecs.compressed_data_huffman
     end
   end
 end

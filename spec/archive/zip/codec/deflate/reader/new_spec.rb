@@ -10,7 +10,7 @@ describe 'Archive::Zip::Codec::Deflate::Reader.new' do
   it 'returns a new instance' do
     DeflateSpecs.string_io do |sio|
       d = Archive::Zip::Codec::Deflate::Reader.new(sio)
-      d.must_be_instance_of(Archive::Zip::Codec::Deflate::Reader)
+      _(d).must_be_instance_of(Archive::Zip::Codec::Deflate::Reader)
       d.close
     end
   end
@@ -19,7 +19,7 @@ describe 'Archive::Zip::Codec::Deflate::Reader.new' do
     DeflateSpecs.string_io do |sio|
       c = Archive::Zip::Codec::Deflate::Reader.new(sio)
       c.close
-      sio.closed?.must_equal true
+      _(sio.closed?).must_equal true
     end
   end
 
@@ -27,7 +27,7 @@ describe 'Archive::Zip::Codec::Deflate::Reader.new' do
     DeflateSpecs.string_io do |sio|
       c = Archive::Zip::Codec::Deflate::Reader.new(sio, autoclose: false)
       c.close
-      sio.closed?.must_equal false
+      _(sio.closed?).must_equal false
     end
   end
 end

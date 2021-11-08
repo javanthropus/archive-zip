@@ -13,10 +13,10 @@ describe 'Zlib::ZWriter#compressed_size' do
       closed_zw = Zlib::ZWriter.open(sio, window_bits: -15) do |zw|
         zw.write(ZlibSpecs.test_data)
         zw.write('') # Causes a flush to the deflater
-        zw.compressed_size.must_be :>=, 0
+        _(zw.compressed_size).must_be :>=, 0
         zw
       end
-      closed_zw.compressed_size.must_equal size
+      _(closed_zw.compressed_size).must_equal size
     end
   end
 end

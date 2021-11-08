@@ -15,7 +15,7 @@ describe 'Zlib::ZWriter#write' do
       end
 
       sio.seek(0)
-      sio.read(8192).must_equal ZlibSpecs.compressed_data
+      _(sio.read(8192)).must_equal ZlibSpecs.compressed_data
     end
   end
 end

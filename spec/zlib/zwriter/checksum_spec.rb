@@ -12,10 +12,10 @@ describe 'Zlib::ZWriter#checksum' do
       closed_zw = Zlib::ZWriter.open(sio, window_bits: 15) do |zw|
         zw.write(ZlibSpecs.test_data)
         zw.write('') # Causes a flush to the deflater
-        zw.checksum.must_equal Zlib.adler32(ZlibSpecs.test_data)
+        _(zw.checksum).must_equal Zlib.adler32(ZlibSpecs.test_data)
         zw
       end
-      closed_zw.checksum.must_equal Zlib.adler32(ZlibSpecs.test_data)
+      _(closed_zw.checksum).must_equal Zlib.adler32(ZlibSpecs.test_data)
     end
   end
 
@@ -25,10 +25,10 @@ describe 'Zlib::ZWriter#checksum' do
       closed_zw = Zlib::ZWriter.open(sio, window_bits: 31) do |zw|
         zw.write(ZlibSpecs.test_data)
         zw.write('') # Causes a flush to the deflater
-        zw.checksum.must_equal crc32
+        _(zw.checksum).must_equal crc32
         zw
       end
-      closed_zw.checksum.must_equal crc32
+      _(closed_zw.checksum).must_equal crc32
     end
   end
 
@@ -37,10 +37,10 @@ describe 'Zlib::ZWriter#checksum' do
       closed_zw = Zlib::ZWriter.open(sio, window_bits: -15) do |zw|
         zw.write(ZlibSpecs.test_data)
         zw.write('') # Causes a flush to the deflater
-        zw.checksum.must_be_nil
+        _(zw.checksum).must_be_nil
         zw
       end
-      closed_zw.checksum.must_be_nil
+      _(closed_zw.checksum).must_be_nil
     end
   end
 end

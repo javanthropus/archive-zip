@@ -15,7 +15,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#seek' do
         TraditionalEncryptionSpecs.mtime
       ) do |r|
         r.read(4)
-        r.seek(0).must_equal 0
+        _(r.seek(0)).must_equal 0
       end
     end
   end
@@ -28,7 +28,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#seek' do
         TraditionalEncryptionSpecs.mtime
       ) do |r|
         r.read(4)
-        r.seek(0, IO::SEEK_CUR).must_equal 4
+        _(r.seek(0, IO::SEEK_CUR)).must_equal 4
       end
     end
   end
@@ -44,7 +44,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#seek' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |r|
-        lambda { r.seek(0) }.must_raise Errno::ESPIPE
+        _(lambda { r.seek(0) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -57,8 +57,8 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#seek' do
         TraditionalEncryptionSpecs.mtime
       ) do |r|
         r.read(4)
-        lambda { r.seek(1, IO::SEEK_CUR) }.must_raise Errno::ESPIPE
-        lambda { r.seek(-1, IO::SEEK_CUR) }.must_raise Errno::ESPIPE
+        _(lambda { r.seek(1, IO::SEEK_CUR) }).must_raise Errno::ESPIPE
+        _(lambda { r.seek(-1, IO::SEEK_CUR) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -70,8 +70,8 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#seek' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |r|
-        lambda { r.seek(-1, IO::SEEK_SET) }.must_raise Errno::ESPIPE
-        lambda { r.seek(1, IO::SEEK_SET) }.must_raise Errno::ESPIPE
+        _(lambda { r.seek(-1, IO::SEEK_SET) }).must_raise Errno::ESPIPE
+        _(lambda { r.seek(1, IO::SEEK_SET) }).must_raise Errno::ESPIPE
       end
     end
   end
@@ -83,9 +83,9 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#seek' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |r|
-        lambda { r.seek(0, IO::SEEK_END) }.must_raise Errno::ESPIPE
-        lambda { r.seek(-1, IO::SEEK_END) }.must_raise Errno::ESPIPE
-        lambda { r.seek(1, IO::SEEK_END) }.must_raise Errno::ESPIPE
+        _(lambda { r.seek(0, IO::SEEK_END) }).must_raise Errno::ESPIPE
+        _(lambda { r.seek(-1, IO::SEEK_END) }).must_raise Errno::ESPIPE
+        _(lambda { r.seek(1, IO::SEEK_END) }).must_raise Errno::ESPIPE
       end
     end
   end

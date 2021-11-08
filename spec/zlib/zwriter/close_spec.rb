@@ -10,6 +10,6 @@ describe 'Zlib::ZWriter.close' do
   it 'closes the stream' do
     zw = Zlib::ZWriter.new(ZlibSpecs.string_io)
     zw.close
-    zw.closed?.must_equal true
+    _(zw.closed?).must_equal true
   end
 end
