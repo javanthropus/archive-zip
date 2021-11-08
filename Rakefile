@@ -168,6 +168,7 @@ end
 
 Rake::TestTask.new do |t|
   t.pattern = 'spec/**/*_spec.rb'
+  t.ruby_opts = %w{-r ./spec/coverage}
 end
 
 # Version string management tasks.
