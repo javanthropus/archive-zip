@@ -4,5 +4,5 @@ SimpleCov.start do
 
   enable_coverage :branch
 
-  #command_name RUBY_DESCRIPTION
+  command_name 'minitest'
 end
