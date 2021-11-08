@@ -7,6 +7,9 @@
 # The documentation directory
 /doc/*
 
+# Code coverage reports
+/coverage/*
+
 # Rubinius compiled files
 *.rbc
 .rbx/*
