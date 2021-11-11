@@ -31,6 +31,18 @@ describe 'Archive::Zip::Codec::Deflate::Writer.new' do
     end
   end
 
+  it 'provides default settings for level, mem_level, and strategy' do
+    data = DeflateSpecs.test_data
+    DeflateSpecs.string_io do |sio|
+      zw = Archive::Zip::Codec::Deflate::Writer.new(sio, autoclose: false)
+      zw.write(data)
+      zw.close
+
+      sio.seek(0)
+      _(sio.read(8192)).must_equal DeflateSpecs.compressed_data
+    end
+  end
+
   it 'allows level to be set' do
     data = DeflateSpecs.test_data
     DeflateSpecs.string_io do |sio|
@@ -53,6 +65,34 @@ describe 'Archive::Zip::Codec::Deflate::Writer.new' do
 
       sio.seek(0)
       _(sio.read(8192)).must_equal DeflateSpecs.compressed_data_nocomp
+    end
+  end
+
+  it 'allows mem_level to be set' do
+    data = DeflateSpecs.test_data
+    DeflateSpecs.string_io do |sio|
+      zw = Archive::Zip::Codec::Deflate::Writer.new(
+        sio, autoclose: false, mem_level: 1
+      )
+      zw.write(data)
+      zw.close
+
+      sio.seek(0)
+      _(sio.read(8192)).must_equal DeflateSpecs.compressed_data_minmem
+    end
+  end
+
+  it 'allows strategy to be set' do
+    data = DeflateSpecs.test_data
+    DeflateSpecs.string_io do |sio|
+      zw = Archive::Zip::Codec::Deflate::Writer.new(
+        sio, autoclose: false, strategy: Zlib::HUFFMAN_ONLY
+      )
+      zw.write(data)
+      zw.close
+
+      sio.seek(0)
+      _(sio.read(8192)).must_equal DeflateSpecs.compressed_data_huffman
     end
   end
 end

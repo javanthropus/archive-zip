@@ -2,16 +2,16 @@
 
 require 'minitest/autorun'
 
-require 'archive/support/zlib'
+require 'archive/zip/codec/deflate/writer'
 
 require_relative '../fixtures/classes'
 
-describe 'Zlib::ZWriter#compressed_size' do
+describe 'Archive::Zip::Codec::Deflate::Writer#compressed_size' do
   it 'returns the number of bytes of compressed data' do
-    size = ZlibSpecs.compressed_data_minwin.bytesize
-    ZlibSpecs.string_io do |sio|
-      closed_zw = Zlib::ZWriter.open(sio, window_bits: -15) do |zw|
-        zw.write(ZlibSpecs.test_data)
+    size = DeflateSpecs.compressed_data.bytesize
+    DeflateSpecs.string_io do |sio|
+      closed_zw = Archive::Zip::Codec::Deflate::Writer.open(sio) do |zw|
+        zw.write(DeflateSpecs.test_data)
         zw.write('') # Causes a flush to the deflater
         _(zw.compressed_size).must_be :>=, 0
         zw

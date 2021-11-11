@@ -30,4 +30,19 @@ describe 'Archive::Zip::Codec::Deflate::Reader.new' do
       _(sio.closed?).must_equal false
     end
   end
+
+  it 'does not require window_bits to be set' do
+    data = DeflateSpecs.test_data
+    compressed_data = DeflateSpecs.string_io
+    Archive::Zip::Codec::Deflate::Writer.open(
+      compressed_data, autoclose: false
+    ) do |zw|
+      zw.write(data)
+    end
+    compressed_data.seek(0)
+
+    zr = Archive::Zip::Codec::Deflate::Reader.new(compressed_data)
+    _(zr.read(8192)).must_equal data
+    zr.close
+  end
 end
