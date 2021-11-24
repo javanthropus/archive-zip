@@ -9,6 +9,7 @@ require 'archive/zip/codec/null_encryption'
 require 'archive/zip/codec/store'
 require 'archive/zip/codec/traditional_encryption'
 require 'archive/zip/data_descriptor'
+require 'archive/zip/dos_time'
 require 'archive/zip/error'
 require 'archive/zip/extra_field'
 
@@ -642,7 +643,7 @@ module Archive; class Zip
           version_needed_to_extract,
           general_purpose_flags,
           compression_codec.compression_method,
-          mtime.to_dos_time.to_i,
+          DOSTime.new(mtime).to_i,
           0,
           0,
           0,
@@ -742,7 +743,7 @@ module Archive; class Zip
           version_needed_to_extract,
           general_purpose_flags,
           compression_codec.compression_method,
-          mtime.to_dos_time.to_i
+          DOSTime.new(mtime).to_i
         ].pack('vvvvV')
       )
       bytes_written += @data_descriptor.dump(io)

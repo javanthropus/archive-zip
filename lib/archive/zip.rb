@@ -6,7 +6,6 @@ require 'tempfile'
 
 require 'archive/support/ioextensions'
 require 'archive/support/iowindow'
-require 'archive/support/time'
 require 'archive/support/zlib'
 require 'archive/zip/codec'
 require 'archive/zip/entry'
