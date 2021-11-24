@@ -45,7 +45,7 @@ PKG_FILES = FileList.new('**/*') do |files|
     # Bundler files
     'vendor/bundle/**/*',
     # Generated content except for README
-    'pkg/**/*', 'doc/**/*'
+    'pkg/**/*', 'doc/**/*', 'coverage/**/*'
   )
   # Exclude directories.
   files.exclude {|file| File.directory?(file)}
