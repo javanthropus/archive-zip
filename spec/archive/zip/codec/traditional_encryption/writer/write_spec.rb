@@ -10,14 +10,35 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Writer#write' do
   it 'writes encrypted data to the delegate' do
     test_data = TraditionalEncryptionSpecs.test_data
     TraditionalEncryptionSpecs.string_io do |sio|
+      # Ensure repeatable test data is used for encryption header.
       srand(0)
       Archive::Zip::Codec::TraditionalEncryption::Writer.open(
         sio,
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |e|
-        # Ensure repeatable test data is used for encryption header.
         e.write(test_data)
+
+        sio.seek(0)
+        _(sio.read(8192)).must_equal(TraditionalEncryptionSpecs.encrypted_data)
+      end
+    end
+  end
+
+  it 'writes a partial buffer when directed' do
+    test_data = TraditionalEncryptionSpecs.test_data
+    TraditionalEncryptionSpecs.string_io do |sio|
+      # Ensure repeatable test data is used for encryption header.
+      srand(0)
+      Archive::Zip::Codec::TraditionalEncryption::Writer.open(
+        sio,
+        TraditionalEncryptionSpecs.password,
+        TraditionalEncryptionSpecs.mtime
+      ) do |e|
+        bytes_written = 0
+        while bytes_written < test_data.bytesize do
+          bytes_written += e.write(test_data[bytes_written..-1], length: 1)
+        end
 
         sio.seek(0)
         _(sio.read(8192)).must_equal(TraditionalEncryptionSpecs.encrypted_data)
