@@ -38,6 +38,8 @@ tools.
     lib/archive/zip.rb
     lib/archive/zip/codec.rb
     lib/archive/zip/codec/deflate.rb
+    lib/archive/zip/codec/deflate/reader.rb
+    lib/archive/zip/codec/deflate/writer.rb
     lib/archive/zip/codec/null_encryption.rb
     lib/archive/zip/codec/store.rb
     lib/archive/zip/codec/traditional_encryption.rb

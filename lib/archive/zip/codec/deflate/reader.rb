@@ -171,6 +171,8 @@ class Reader < IO::LikeHelpers::DelegatedIO
       result
     when IO::SEEK_CUR
       @inflater.total_out - (@inflate_buffer.size - @inflate_buffer_idx)
+    else
+      raise Errno::EINVAL
     end
   end
 end

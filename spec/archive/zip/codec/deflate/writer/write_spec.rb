@@ -1,6 +1,7 @@
 # encoding: UTF-8
 
 require 'minitest/autorun'
+require 'securerandom'
 
 require 'archive/zip/codec/deflate'
 
@@ -16,6 +17,26 @@ describe 'Archive::Zip::Codec::Deflate::Writer#write' do
         bytes_written = 0
         while bytes_written < test_data.bytesize
           result = compressor.write(test_data[bytes_written..-1])
+          bytes_written += result
+        end
+      end
+      sio.seek(0)
+      _(sio.read(8192)).must_equal(DeflateSpecs.compressed_data)
+    end
+  end
+
+  it 'writes partial data to the delegate when given an explicit length argument' do
+    test_data = DeflateSpecs.test_data + 'extra'
+    max_size = test_data.bytesize - 5
+    DeflateSpecs.string_io do |sio|
+      Archive::Zip::Codec::Deflate::Writer.open(
+        sio, autoclose: false
+      ) do |compressor|
+        bytes_written = 0
+        while bytes_written < max_size
+          result = compressor.write(
+            test_data[bytes_written..-1], length: max_size - bytes_written
+          )
           bytes_written += result
         end
       end
@@ -51,19 +72,17 @@ describe 'Archive::Zip::Codec::Deflate::Writer#write' do
   end
 
   it 'writes compressed data to a non-blocking delegate that is sometimes not ready to write' do
-    test_data = DeflateSpecs.test_data
+    # This data ensures that there is data to flush from the internal buffer.
+    test_data = SecureRandom.random_bytes(1_000_000)
     DeflateSpecs.string_io do |sio|
-      # Override #write to behave as if it is non-blocking and would block on
-      # the first call.
+      # Override #write to behave as if would block on every other call starting
+      # with the first.
       class << sio
         alias :write_orig :write
         def write(buffer, length: buffer.bytesize)
-          @do_write = false unless defined?(@do_write)
+          @do_write = defined?(@do_write) && ! @do_write
 
-          unless @do_write
-            @do_write = true
-            return :wait_writable
-          end
+          return :wait_writable unless @do_write
 
           write_orig(buffer, length: length)
         end
@@ -74,7 +93,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer#write' do
       ) do |compressor|
         bytes_written = 0
         while bytes_written < test_data.bytesize
-          result = compressor.write(test_data[bytes_written..-1])
+          result = compressor.write(test_data[bytes_written..-1], length: 100)
           if Symbol === result
             compressor.wait(IO::WRITABLE)
             next
@@ -85,7 +104,18 @@ describe 'Archive::Zip::Codec::Deflate::Writer#write' do
       end
 
       sio.seek(0)
-      _(sio.read(8192)).must_equal(DeflateSpecs.compressed_data)
+      Archive::Zip::Codec::Deflate::Reader.open(
+        sio, autoclose: false
+      ) do |decompressor|
+        data = ''
+        begin
+          loop do
+            data << decompressor.read(8192)
+          end
+        rescue EOFError
+        end
+        _(data).must_equal test_data
+      end
     end
   end
 end

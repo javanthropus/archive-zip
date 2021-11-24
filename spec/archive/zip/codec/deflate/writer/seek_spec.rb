@@ -68,4 +68,13 @@ describe 'Archive::Zip::Codec::Deflate::Writer#seek' do
       end
     end
   end
+
+  it 'raises Errno::EINVAL when an invalid whence value is provided' do
+    DeflateSpecs.string_io do |sio|
+      Archive::Zip::Codec::Deflate::Writer.open(sio) do |zw|
+        _(lambda { zw.seek(0, nil) }).must_raise Errno::EINVAL
+        _(lambda { zw.seek(0, 'invalid') }).must_raise Errno::EINVAL
+      end
+    end
+  end
 end

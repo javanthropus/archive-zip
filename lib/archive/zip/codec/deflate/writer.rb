@@ -87,8 +87,7 @@ class Writer < IO::LikeHelpers::DelegatedIO
     super(delegate, autoclose: autoclose)
 
     @deflater = Zlib::Deflate.new(level, -Zlib::MAX_WBITS, mem_level, strategy)
-    @deflate_buffer = ''
-    @deflate_buffer_idx = 0
+    self.deflate_buffer = ''
     @crc32 = 0
     @compressed_size = nil
     @uncompressed_size = nil
@@ -103,8 +102,7 @@ class Writer < IO::LikeHelpers::DelegatedIO
     return result if Symbol === result
 
     unless @deflater.finished?
-      @deflate_buffer = @deflater.finish
-      @deflate_buffer_idx = 0
+      self.deflate_buffer = @deflater.finish
       result = flush
       return result if Symbol === result
     end
@@ -112,9 +110,8 @@ class Writer < IO::LikeHelpers::DelegatedIO
     @compressed_size = @deflater.total_out
     @uncompressed_size = @deflater.total_in
     @deflater.close
-    super
 
-    nil
+    super
   end
 
   # The CRC32 checksum of the uncompressed data written using this object.
@@ -168,12 +165,13 @@ class Writer < IO::LikeHelpers::DelegatedIO
     when IO::SEEK_SET
       delegate.seek(0, IO::SEEK_SET)
       @deflater.reset
-      @deflate_buffer = ''
-      @deflate_buffer_idx = 0
+      self.deflate_buffer = ''
       @crc32 = 0
       0
     when IO::SEEK_CUR
       @deflater.total_in
+    else
+      raise Errno::EINVAL
     end
   end
 
@@ -185,14 +183,18 @@ class Writer < IO::LikeHelpers::DelegatedIO
     return result if Symbol === result
 
     buffer = buffer[0, length] unless length == buffer.bytesize
-    @deflate_buffer = @deflater.deflate(buffer)
-    @deflate_buffer_idx = 0
+    self.deflate_buffer = @deflater.deflate(buffer)
     @crc32 = Zlib.crc32(buffer, @crc32)
 
     length
   end
 
   private
+
+  def deflate_buffer=(buffer)
+    @deflate_buffer = buffer
+    @deflate_buffer_idx = 0
+  end
 
   def flush
     while @deflate_buffer_idx < @deflate_buffer.bytesize
