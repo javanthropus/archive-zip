@@ -36,8 +36,7 @@ VERSION_REF =
 PKG_FILES = FileList.new('**/*') do |files|
   files.exclude(
     # Test files
-    'spec/**/*', 'rubyspec/**/*', 'mspec/**/*', 'mspec-overrides/**/*',
-    'spec_helper.rb', 'io-like.mspec',
+    'spec/**/*',
     # Non-shipping source files
     '*.gemspec', 'Gemfile', 'Gemfile.lock', 'Rakefile', 'README.md.erb',
     # Examples and experiments
