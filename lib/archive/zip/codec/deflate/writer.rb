@@ -163,11 +163,12 @@ class Writer < IO::LikeHelpers::DelegatedIO
 
     case whence
     when IO::SEEK_SET
-      delegate.seek(0, IO::SEEK_SET)
+      result = super
+      return result if Symbol === result
       @deflater.reset
       self.deflate_buffer = ''
       @crc32 = 0
-      0
+      result
     when IO::SEEK_CUR
       @deflater.total_in
     else
