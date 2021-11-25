@@ -54,6 +54,7 @@ describe 'Archive::Zip::Codec::Deflate::Reader#seek' do
       end
 
       Archive::Zip::Codec::Deflate::Reader.open(cd) do |zr|
+        zr.read(4)
         _(lambda { zr.seek(0) }).must_raise Errno::ESPIPE
       end
     end
