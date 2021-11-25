@@ -35,12 +35,17 @@ class Base < IO::LikeHelpers::DelegatedIO
     assert_open
     raise Errno::ESPIPE if amount != 0 || whence == IO::SEEK_END
 
-    if whence == IO::SEEK_SET
-      super
+    case whence
+    when IO::SEEK_SET
+      result = super
+      return result if Symbol === result
       initialize_keys
+      result
+    when IO::SEEK_CUR
+      @bytes_processed
+    else
+      raise Errno::EINVAL
     end
-
-    @bytes_processed
   end
 
   private
