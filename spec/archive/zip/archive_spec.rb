@@ -28,10 +28,6 @@ describe 'Archive::Zip#archive' do
   end
 
   it 'adds entries with multibyte names' do
-    unless Object.const_defined?(:Encoding)
-      skip("String encodings are not supported on current Ruby (#{RUBY_DESCRIPTION})")
-    end
-
     mb_file_name = '☂file☄'
     Dir.mktmpdir('archive_zip#archive') do |dir|
       mb_file_path = File.join(dir, mb_file_name)
