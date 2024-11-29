@@ -25,7 +25,7 @@ class IOWindow < IO::LikeHelpers::DelegatedIO
     @pos = 0
   end
 
-  def read(length, buffer: nil)
+  def read(length, buffer: nil, buffer_offset: 0)
     # Error out if the end of the window is reached.
     raise EOFError, 'end of file reached' if @pos >= @window_size
 
@@ -33,10 +33,10 @@ class IOWindow < IO::LikeHelpers::DelegatedIO
     length = @window_size - @pos if @pos + length > @window_size
 
     # Fill a buffer with the data from the delegate.
-    result = delegate.read(length, buffer: buffer)
+    result = super(length, buffer: buffer, buffer_offset: buffer_offset)
     return result if Symbol === result
 
-    @pos += buffer.length
+    @pos += buffer.nil? ? result.bytesize : result
 
     result
   end

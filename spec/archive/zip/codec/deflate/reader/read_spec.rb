@@ -30,10 +30,8 @@ describe 'Archive::Zip::Codec::Deflate::Reader#read' do
     test_data = DeflateSpecs.test_data
     DeflateSpecs.compressed_data do |cd|
       Archive::Zip::Codec::Deflate::Reader.open(cd) do |zr|
-        data = ''
-        bytes_read = zr.read(8192, buffer: data)
+        data = zr.read(8192)
         _(data).must_equal test_data
-        _(bytes_read).must_equal test_data.bytesize
       end
     end
   end
@@ -44,8 +42,8 @@ describe 'Archive::Zip::Codec::Deflate::Reader#read' do
       # Override #read to perform reads 1 byte at a time.
       class << cd
         alias :read_orig :read
-        def read(length, buffer: nil)
-          read_orig(1, buffer: buffer)
+        def read(length, buffer: nil, buffer_offset: 0)
+          read_orig(1, buffer: buffer, buffer_offset: buffer_offset)
         end
       end
 
@@ -71,12 +69,12 @@ describe 'Archive::Zip::Codec::Deflate::Reader#read' do
       # every other call starting with the first.
       class << cd
         alias :read_orig :read
-        def read(length, buffer: nil)
+        def read(length, buffer: nil, buffer_offset: 0)
           @do_read = defined?(@do_read) && ! @do_read
 
           return :wait_readable unless @do_read
 
-          read_orig(length, buffer: buffer)
+          read_orig(length, buffer: buffer, buffer_offset: buffer_offset)
         end
       end
 

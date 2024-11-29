@@ -19,10 +19,8 @@ describe 'Archive::Zip::Codec::Store::Reader#read' do
     test_data = StoreSpecs.test_data
     StoreSpecs.compressed_data do |cd|
       Archive::Zip::Codec::Store::Reader.open(cd) do |d|
-        data = ''
-        bytes_read = d.read(8192, buffer: data)
+        data = d.read(8192)
         _(data).must_equal test_data
-        _(bytes_read).must_equal test_data.bytesize
       end
     end
   end
@@ -33,8 +31,8 @@ describe 'Archive::Zip::Codec::Store::Reader#read' do
       # Override #read to perform reads 1 byte at a time.
       class << cd
         alias :read_orig :read
-        def read(length, buffer: nil)
-          read_orig(1, buffer: buffer)
+        def read(length, buffer: nil, buffer_offset: 0)
+          read_orig(1, buffer: buffer, buffer_offset: buffer_offset)
         end
       end
 
@@ -60,12 +58,12 @@ describe 'Archive::Zip::Codec::Store::Reader#read' do
       # every other call starting with the first.
       class << cd
         alias :read_orig :read
-        def read(length, buffer: nil)
+        def read(length, buffer: nil, buffer_offset: 0)
           @do_read = defined?(@do_read) && ! @do_read
 
           return :wait_readable unless @do_read
 
-          read_orig(length, buffer: buffer)
+          read_orig(length, buffer: buffer, buffer_offset: buffer_offset)
         end
       end
 

@@ -14,7 +14,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |d|
-        _(d.read(8192)).must_equal(TraditionalEncryptionSpecs.test_data)
+        _(d.read(8192)).must_equal TraditionalEncryptionSpecs.test_data
       end
     end
   end
@@ -26,10 +26,8 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |d|
-        buffer = ''
-        bytes_read = d.read(8192, buffer: buffer)
-        _(bytes_read).must_equal(TraditionalEncryptionSpecs.test_data.bytesize)
-        _(buffer[0, bytes_read]).must_equal(TraditionalEncryptionSpecs.test_data)
+        buffer = d.read(8192)
+        _(buffer).must_equal TraditionalEncryptionSpecs.test_data
       end
     end
   end
@@ -39,8 +37,8 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
       # Override ed.read to read only 1 byte at a time.
       class << ed
         alias :read_orig :read
-        def read(length, buffer: nil)
-          read_orig(1, buffer: buffer)
+        def read(length, buffer: nil, buffer_offset: 0)
+          read_orig(1, buffer: buffer, buffer_offset: buffer_offset)
         end
       end
 
@@ -59,7 +57,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
         rescue EOFError
           # Finished reading.
         end
-        _(buffer).must_equal(TraditionalEncryptionSpecs.test_data)
+        _(buffer).must_equal TraditionalEncryptionSpecs.test_data
       end
     end
   end
@@ -69,7 +67,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
       # Override ed.read to return :wait_readable every other time it's called.
       class << ed
         alias :read_orig :read
-        def read(length, buffer: nil)
+        def read(length, buffer: nil, buffer_offset: 0)
           @do_read = false unless defined?(:do_read)
 
           unless @do_read then
@@ -78,7 +76,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
           end
 
           @do_read = false
-          read_orig(length, buffer: buffer)
+          read_orig(length, buffer: buffer, buffer_offset: buffer_offset)
         end
       end
 
@@ -97,7 +95,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
         rescue EOFError
           # Finished reading.
         end
-        _(buffer).must_equal(TraditionalEncryptionSpecs.test_data)
+        _(buffer).must_equal TraditionalEncryptionSpecs.test_data
       end
     end
   end

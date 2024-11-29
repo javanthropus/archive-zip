@@ -16,7 +16,7 @@ class Reader < Base
   # object.
   #
   # Raises EOFError if there is no data to read.
-  def read(length, buffer: nil)
+  def read(length, buffer: nil, buffer_offset: 0)
     # This short circuits if the header has already been read.
     result = read_header
     return result if Symbol === result
@@ -26,12 +26,13 @@ class Reader < Base
 
     if buffer.nil?
       buffer = result
+      buffer_offset = 0
       length = buffer.bytesize
     else
       length = result
     end
 
-    buffer[0, length].to_enum(:each_byte).each_with_index do |byte, idx|
+    buffer[buffer_offset, length].to_enum(:each_byte).each_with_index do |byte, idx|
       buffer[idx] = (byte ^ decrypt_byte).chr
       update_keys(buffer[idx])
     end

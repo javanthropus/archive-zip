@@ -119,9 +119,17 @@ class Reader < IO::LikeHelpers::DelegatedIO
     DataDescriptor.new(crc32, compressed_size, uncompressed_size)
   end
 
-  def read(length, buffer: nil)
+  def read(length, buffer: nil, buffer_offset: 0)
     length = Integer(length)
     raise ArgumentError, 'length must be at least 0' if length < 0
+    if ! buffer.nil?
+      if buffer_offset < 0 || buffer_offset >= buffer.bytesize
+        raise ArgumentError, 'buffer_offset is not a valid buffer index'
+      end
+      if buffer.bytesize - buffer_offset < length
+        raise ArgumentError, 'length is greater than available buffer space'
+      end
+    end
 
     assert_readable
 
@@ -146,7 +154,7 @@ class Reader < IO::LikeHelpers::DelegatedIO
     @crc32 = Zlib.crc32(content, @crc32)
     return content if buffer.nil?
 
-    buffer[0, length] = content
+    buffer[buffer_offset, length] = content
     return length
   end
 

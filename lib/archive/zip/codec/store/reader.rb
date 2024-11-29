@@ -58,7 +58,7 @@ class Reader < IO::LikeHelpers::DelegatedIO
 
   # Returns at most _length_ bytes from the delegate object.  Updates the
   # uncompressed_size and crc32 attributes as a side effect.
-  def read(length, buffer: nil)
+  def read(length, buffer: nil, buffer_offset: 0)
     result = super
     return result if Symbol === result
 
