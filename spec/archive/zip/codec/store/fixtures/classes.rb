@@ -13,7 +13,7 @@ class StoreSpecs
     alias_method :compressed_data, :test_data
   end
 
-  def self.string_io(data = '', mode = 'r+b', &b)
+  def self.string_io(data = ''.b, mode = 'r+b', &b)
     IO::LikeHelpers::IOWrapper.open(StringIO.new(data, mode), &b)
   end
 

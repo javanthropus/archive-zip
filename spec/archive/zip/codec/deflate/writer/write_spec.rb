@@ -107,7 +107,7 @@ describe 'Archive::Zip::Codec::Deflate::Writer#write' do
       Archive::Zip::Codec::Deflate::Reader.open(
         sio, autoclose: false
       ) do |decompressor|
-        data = ''
+        data = ''.b
         begin
           loop do
             data << decompressor.read(8192)

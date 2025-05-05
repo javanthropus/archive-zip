@@ -47,7 +47,7 @@ describe 'Archive::Zip::Codec::Deflate::Reader#read' do
         end
       end
 
-      data = ''
+      data = ''.b
       Archive::Zip::Codec::Deflate::Reader.open(cd) do |zr|
         begin
           loop do
@@ -78,7 +78,7 @@ describe 'Archive::Zip::Codec::Deflate::Reader#read' do
         end
       end
 
-      data = ''
+      data = ''.b
       Archive::Zip::Codec::Deflate::Reader.open(cd) do |zr|
         begin
           loop do

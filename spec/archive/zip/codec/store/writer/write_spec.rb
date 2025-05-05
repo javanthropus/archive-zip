@@ -99,7 +99,7 @@ describe 'Archive::Zip::Codec::Store::Writer#write' do
       Archive::Zip::Codec::Store::Reader.open(
         sio, autoclose: false
       ) do |decompressor|
-        data = ''
+        data = ''.b
         begin
           loop do
             data << decompressor.read(8192)

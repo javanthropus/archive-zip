@@ -47,7 +47,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |d|
-        buffer = ''
+        buffer = ''.b
         begin
           loop do
             result = d.read(8192)
@@ -85,7 +85,7 @@ describe 'Archive::Zip::Codec::TraditionalEncryption::Reader#read' do
         TraditionalEncryptionSpecs.password,
         TraditionalEncryptionSpecs.mtime
       ) do |d|
-        buffer = ''
+        buffer = ''.b
         begin
           loop do
             result = d.read(8192)

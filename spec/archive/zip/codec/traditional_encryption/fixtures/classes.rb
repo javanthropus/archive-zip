@@ -21,7 +21,7 @@ class TraditionalEncryptionSpecs
     read_data(File.join(File.dirname(__FILE__), 'raw_file.txt'), &b)
   end
 
-  def self.string_io(data = '', mode = 'r+b', &b)
+  def self.string_io(data = ''.b, mode = 'r+b', &b)
     IO::LikeHelpers::IOWrapper.open(StringIO.new(data, mode), &b)
   end
 

@@ -36,7 +36,7 @@ describe 'Archive::Zip::Codec::Store::Reader#read' do
         end
       end
 
-      data = ''
+      data = ''.b
       Archive::Zip::Codec::Store::Reader.open(cd) do |d|
         begin
           loop do
@@ -67,7 +67,7 @@ describe 'Archive::Zip::Codec::Store::Reader#read' do
         end
       end
 
-      data = ''
+      data = ''.b
       Archive::Zip::Codec::Store::Reader.open(cd) do |d|
         begin
           loop do
