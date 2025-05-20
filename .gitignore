@@ -21,3 +21,6 @@
 
 # Yardoc support files
 /.yardoc/
+
+# Temporary files
+/tmp
