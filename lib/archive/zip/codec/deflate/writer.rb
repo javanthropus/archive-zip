@@ -84,7 +84,10 @@ class Writer < IO::LikeHelpers::DelegatedIO
     mem_level: nil,
     strategy: nil
   )
-    super(delegate, autoclose: autoclose)
+    super(
+      IO === delegate ? IO::Like::IOWrapper.new(delegate) : delegate,
+      autoclose: autoclose
+    )
 
     @deflater = Zlib::Deflate.new(level, -Zlib::MAX_WBITS, mem_level, strategy)
     self.deflate_buffer = ''

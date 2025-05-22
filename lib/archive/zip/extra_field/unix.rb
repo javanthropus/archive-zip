@@ -27,7 +27,7 @@ module Archive; class Zip; module ExtraField
       # the official ZIP specification.
       #
       # Raises Archive::Zip::ExtraFieldError if _data_ contains invalid data.
-      def parse_central(data)
+      def parse_central(header_id, data)
         unless data.length >= 12 then
           raise Zip::ExtraFieldError, "invalid size for Unix data: #{data.size}"
         end

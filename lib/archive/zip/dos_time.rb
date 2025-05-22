@@ -47,7 +47,7 @@ class DOSTime
   # Returns a Time instance which is equivalent to the time represented by
   # this object.
   def to_time
-    second = ((0b11111         & @dos_time)      ) * 2
+    second = ((0b11111         & @dos_time) <<  1)
     minute = ((0b111111  << 5  & @dos_time) >>  5)
     hour   = ((0b11111   << 11 & @dos_time) >> 11)
     day    = ((0b11111   << 16 & @dos_time) >> 16)
@@ -62,12 +62,12 @@ class DOSTime
   # bracketed by the limits of the ability of the DOS date-time structure to
   # represent them.  Accuracy is 2 seconds and years range from 1980 to 2099.
   def from_time(time)
-    dos_sec  = time.sec/2
+    dos_sec  = time.sec + 1
     dos_year = time.year - 1980
     dos_year = 0   if dos_year < 0
     dos_year = 119 if dos_year > 119
 
-    (dos_sec         ) |
+    (dos_sec    >>  1) |
     (time.min   <<  5) |
     (time.hour  << 11) |
     (time.day   << 16) |
@@ -76,15 +76,15 @@ class DOSTime
   end
 
   def validate
-    second = (0b11111         & @dos_time)
+    second = (0b11111         & @dos_time) << 1
     minute = (0b111111  << 5  & @dos_time) >>  5
     hour   = (0b11111   << 11 & @dos_time) >> 11
     day    = (0b11111   << 16 & @dos_time) >> 16
     month  = (0b1111    << 21 & @dos_time) >> 21
     year   = (0b1111111 << 25 & @dos_time) >> 25
 
-    if second > 29
-      raise ArgumentError, 'second must not be greater than 29'
+    if second > 60
+      raise ArgumentError, 'second must not be greater than 60'
     elsif minute > 59
       raise ArgumentError, 'minute must not be greater than 59'
     elsif hour > 23

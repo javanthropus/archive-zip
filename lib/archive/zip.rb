@@ -220,9 +220,6 @@ module Archive # :nodoc:
     def add_entry(entry)
       raise IOError, 'non-writable archive' unless writable?
       raise IOError, 'closed archive' if closed?
-      unless entry.kind_of?(Entry) then
-        raise ArgumentError, 'Archive::Zip::Entry instance required'
-      end
 
       @entries << entry
       self
@@ -708,11 +705,11 @@ module Archive # :nodoc:
     def dump(io)
       bytes_written = 0
       @entries.each do |entry|
-        bytes_written += entry.dump_local_file_record(io, bytes_written)
+        bytes_written += entry.dump_local_file(io, bytes_written)
       end
       central_directory_offset = bytes_written
       @entries.each do |entry|
-        bytes_written += entry.dump_central_file_record(io)
+        bytes_written += entry.dump_central_directory(io)
       end
       central_directory_length = bytes_written - central_directory_offset
       bytes_written += io.write(EOCD_SIGNATURE)

@@ -17,7 +17,10 @@ class Base < IO::LikeHelpers::DelegatedIO
   # the encryption key.  _mtime_ must be the last modified time of the entry
   # to be encrypted/decrypted.
   def initialize(delegate, password, mtime, autoclose: true)
-    super(delegate, autoclose: autoclose)
+    super(
+      IO === delegate ? IO::Like::IOWrapper.new(delegate) : delegate,
+      autoclose: autoclose
+    )
     @password = password
     @mtime = mtime
 

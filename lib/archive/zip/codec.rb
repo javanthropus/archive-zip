@@ -22,12 +22,8 @@ module Archive; class Zip
     # Returns a new compression codec instance based on _compression_method_ and
     # _general_purpose_flags_.
     def self.create_compression_codec(compression_method, general_purpose_flags)
-      # Load the standard compression codecs.
-      require 'archive/zip/codec/deflate'
-      require 'archive/zip/codec/store'
-
       codec = COMPRESSION_CODECS[compression_method]
-      raise Zip::Error, 'unsupported compression codec' if codec.nil?
+      raise Zip::Error, 'unsupported compression codec' unless codec
       codec.new(general_purpose_flags)
     end
 
@@ -37,17 +33,17 @@ module Archive; class Zip
     # support the strong encryption codecs.  This is intended to be an internal
     # method anyway, so this fact should not cause major issues for users of
     # this library.
-    def self.create_encryption_codec(general_purpose_flags)
-      general_purpose_flags &= 0b0000000001000001
-      if general_purpose_flags == 0b0000000000000000 then
-        require 'archive/zip/codec/null_encryption'
-        codec = NullEncryption.new
-      elsif general_purpose_flags == 0b0000000000000001 then
-        require 'archive/zip/codec/traditional_encryption'
-        codec = TraditionalEncryption.new
-      end
-      raise Zip::Error, 'unsupported encryption codec' if codec.nil?
+    def self.create_encryption_codec(general_purpose_flags, extra_fields)
+      codec = general_purpose_flags.encrypted? ?
+        TraditionalEncryption.new :
+        NullEncryption.new
+      raise Zip::Error, 'unsupported encryption codec' unless codec
       codec
     end
   end
 end; end
+
+require 'archive/zip/codec/deflate'
+require 'archive/zip/codec/null_encryption'
+require 'archive/zip/codec/store'
+require 'archive/zip/codec/traditional_encryption'

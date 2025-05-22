@@ -1,31 +1,40 @@
 # encoding: UTF-8
 
+require 'archive/zip/error'
+
 module Archive; class Zip
   module ExtraField
     # A Hash used to map extra field header identifiers to extra field classes.
     EXTRA_FIELDS = {}
 
-    # Returns an instance of an extra field class by selecting the class using
-    # _header_id_ and passing _data_ to the class' _parse_central_ method.  If
-    # there is no mapping from a given value of _header_id_ to an extra field
-    # class, an instance of Archive::Zip::Entry::ExtraField::Raw is returned.
-    def self.parse_central(header_id, data)
-      if EXTRA_FIELDS.has_key?(header_id) then
-        EXTRA_FIELDS[header_id].parse_central(data)
-      else
-        Raw.parse_central(header_id, data)
+    def self.parse_many(bytes)
+      extra_fields = []
+      idx = 0
+      while idx < bytes.size do
+        raise EntryError, 'insufficient data available' if bytes.size < idx + 4
+        header_id, data_size = bytes[idx, 4].unpack('vv')
+        idx += 4
+
+        if bytes.size < idx + data_size
+          raise EntryError, 'insufficient data available'
+        end
+        data = bytes[idx, data_size]
+        idx += data_size
+
+        extra_fields << yield(header_id, data)
+      end
+      extra_fields
+    end
+
+    def self.parse_many_central(bytes)
+      parse_many(bytes) do |header_id, data|
+        EXTRA_FIELDS.fetch(header_id, Raw).parse_central(header_id, data)
       end
     end
 
-    # Returns an instance of an extra field class by selecting the class using
-    # _header_id_ and passing _data_ to the class' _parse_local_ method.  If
-    # there is no mapping from a given value of _header_id_ to an extra field
-    # class, an instance of Archive::Zip::Entry::ExtraField::Raw is returned.
-    def self.parse_local(header_id, data)
-      if EXTRA_FIELDS.has_key?(header_id) then
-        EXTRA_FIELDS[header_id].parse_local(data)
-      else
-        Raw.parse_local(header_id, data)
+    def self.parse_many_local(bytes)
+      parse_many(bytes) do |header_id, data|
+        EXTRA_FIELDS.fetch(header_id, Raw).parse_local(header_id, data)
       end
     end
   end

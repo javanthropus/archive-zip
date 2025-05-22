@@ -22,7 +22,7 @@ module Archive; class Zip; module ExtraField
       # the documentation provided with InfoZip's sources.
       #
       # Raises Archive::Zip::ExtraFieldError if _data_ contains invalid data.
-      def parse_central(data)
+      def parse_central(header_id, data)
         unless data.size == 5 || data.size == 9 || data.size == 13 then
           raise Zip::ExtraFieldError,
             "invalid size for extended timestamp: #{data.size}"
@@ -66,7 +66,7 @@ module Archive; class Zip; module ExtraField
       # the documentation provided with InfoZip's sources.
       #
       # Raises Archive::Zip::ExtraFieldError if _data_ contains invalid data.
-      def parse_local(data)
+      def parse_local(header_id, data)
         unless data.size == 5 || data.size == 9 || data.size == 13 then
           raise Zip::ExtraFieldError,
             "invalid size for extended timestamp: #{data.size}"

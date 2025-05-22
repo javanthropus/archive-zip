@@ -19,7 +19,7 @@ module Archive; class Zip; module Codec
     #
     # Creates a new instance of this class.  _general_purpose_flags_ is not
     # used.
-    def initialize(general_purpose_flags = 0)
+    def initialize(general_purpose_flags = nil)
     end
 
     # This method signature is part of the interface contract expected by
@@ -65,7 +65,7 @@ module Archive; class Zip; module Codec
     # Returns <tt>0</tt> since this compression codec does not make use of
     # general purpose flags of ZIP archive entries.
     def general_purpose_flags
-      0
+      GeneralPurposeFlags.new(GeneralPurposeFlags::SUPER_FAST)
     end
   end
 end; end; end

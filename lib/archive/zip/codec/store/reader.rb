@@ -1,6 +1,7 @@
 # encoding: UTF-8
 
 require 'io/like_helpers/delegated_io'
+require 'io/like_helpers/io_wrapper'
 
 require 'archive/support/zlib'
 require 'archive/zip/data_descriptor'
@@ -38,7 +39,10 @@ class Reader < IO::LikeHelpers::DelegatedIO
   #
   # Any other seeking attempts, will raise Errno::EINVAL exceptions.
   def initialize(delegate, autoclose: true)
-    super
+    super(
+      IO === delegate ? IO::Like::IOWrapper.new(delegate) : delegate,
+      autoclose: autoclose
+    )
     @crc32 = 0
     @uncompressed_size = 0
   end

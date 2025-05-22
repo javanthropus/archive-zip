@@ -2,6 +2,7 @@
 
 require 'archive/zip/codec/traditional_encryption/reader'
 require 'archive/zip/codec/traditional_encryption/writer'
+require 'archive/zip/general_purpose_flags'
 
 module Archive; class Zip; module Codec
   # Archive::Zip::Codec::TraditionalEncryption is a handle for the traditional
@@ -46,7 +47,7 @@ module Archive; class Zip; module Codec
     # Returns an integer representing the general purpose flags of a ZIP archive
     # entry using this encryption codec.
     def general_purpose_flags
-      0b0000000000000001
+      GeneralPurposeFlags.new(GeneralPurposeFlags::FLAG_ENCRYPTED)
     end
 
     # This method signature is part of the interface contract expected by

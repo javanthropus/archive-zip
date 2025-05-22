@@ -33,7 +33,6 @@ tools.
     lib/archive/support/ioextensions.rb
     lib/archive/support/iowindow.rb
     lib/archive/support/stringio.rb
-    lib/archive/support/time.rb
     lib/archive/support/zlib.rb
     lib/archive/zip.rb
     lib/archive/zip/codec.rb
@@ -51,5 +50,12 @@ tools.
     lib/archive/zip/extra_field/raw.rb
     lib/archive/zip/extra_field/unix.rb
     lib/archive/zip/version.rb
+
+    lib/archive/zip/codec/store/reader.rb
+    lib/archive/zip/codec/store/writer.rb
+    lib/archive/zip/codec/traditional_encryption/base.rb
+    lib/archive/zip/codec/traditional_encryption/reader.rb
+    lib/archive/zip/codec/traditional_encryption/writer.rb
+    lib/archive/zip/dos_time.rb
   )
 end

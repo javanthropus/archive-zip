@@ -1,7 +1,5 @@
 # encoding: UTF-8
 
-require 'archive/zip/codec'
-
 module Archive; class Zip; module Codec
   # Archive::Zip::Codec::NullEncryption is a handle for an encryption codec
   # which passes data through itself unchanged.
@@ -43,7 +41,7 @@ module Archive; class Zip; module Codec
     # Returns an integer representing the general purpose flags of a ZIP archive
     # entry using this encryption codec.
     def general_purpose_flags
-      0b0000000000000000
+      GeneralPurposeFlags.new(GeneralPurposeFlags::SUPER_FAST)
     end
 
     # This method signature is part of the interface contract expected by

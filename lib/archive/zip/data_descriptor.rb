@@ -5,6 +5,10 @@ module Archive; class Zip
   # information concerning the compressed data in a ZIP archive entry and allows
   # easy comparisons between instances of itself.
   class DataDescriptor
+    def self.parse(io)
+      new(*IOExtensions.read_exactly(io, 12).unpack('VVV'))
+    end
+
     # Create a new instance of this class where <em>crc32</em>,
     # _compressed_size_, and _uncompressed_size_ are all integers representing a
     # CRC32 checksum of uncompressed data, the size of compressed data, and the

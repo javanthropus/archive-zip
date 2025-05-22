@@ -21,7 +21,10 @@ class Writer < IO::LikeHelpers::DelegatedIO
   # must be writable and must provide a write method as IO does or errors
   # will be raised when performing write operations.
   def initialize(delegate, autoclose: true)
-    super
+    super(
+      IO === delegate ? IO::Like::IOWrapper.new(delegate) : delegate,
+      autoclose: autoclose
+    )
     @crc32 = 0
     @uncompressed_size = 0
   end

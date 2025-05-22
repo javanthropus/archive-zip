@@ -50,7 +50,10 @@ class Reader < IO::LikeHelpers::DelegatedIO
     autoclose: true,
     delegate_read_size: DEFAULT_DELEGATE_READ_SIZE
   )
-    super(delegate, autoclose: autoclose)
+    super(
+      IO === delegate ? IO::Like::IOWrapper.new(delegate) : delegate,
+      autoclose: autoclose
+    )
 
     @delegate_read_size = delegate_read_size
     @read_buffer = "\0".b * @delegate_read_size
