@@ -142,7 +142,8 @@ namespace :build do
     spec = SPEC
     File.open('README.md', 'w') do |readme|
       readme.write(
-        ERB.new(File.read('README.md.erb'), nil, '-').result(binding)
+        ERB.new(File.read('README.md.erb'), trim_mode: '-')
+        .result_with_hash(spec: SPEC)
       )
     end
   end
