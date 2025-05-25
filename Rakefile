@@ -185,7 +185,7 @@ namespace :version do
   end
 
   desc 'Check that all version strings are correctly set'
-  task :check => ['version:check:spec', 'version:check:version_rb', 'version:check:news']
+  task :check => ['version:check:spec', 'version:check:news']
 
   namespace :check do
     desc 'Check that the version in the gemspec is correctly set'
@@ -193,20 +193,6 @@ namespace :version do
       version = get_version_argument
       if version != SPEC.version
         raise "The given version `#{version}' does not match the gemspec version `#{SPEC.version}'"
-      end
-    end
-
-    desc 'Check that the version in the version.rb file is correctly set'
-    task :version_rb do
-      version = get_version_argument
-      begin
-        load VERSION_RB
-        internal_version = Gem::Version.create(eval(VERSION_REF))
-        if version != internal_version
-          raise "The given version `#{version}' does not match the version.rb version `#{internal_version}'"
-        end
-      rescue ArgumentError
-        raise "Invalid version specified in `#{VERSION_RB}'"
       end
     end
 

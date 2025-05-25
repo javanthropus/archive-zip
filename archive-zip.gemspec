@@ -50,6 +50,5 @@ tools.
     lib/archive/zip/extra_field/extended_timestamp.rb
     lib/archive/zip/extra_field/raw.rb
     lib/archive/zip/extra_field/unix.rb
-    lib/archive/zip/version.rb
   )
 end
