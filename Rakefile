@@ -14,7 +14,6 @@ GEMSPEC = Dir['*.gemspec'].first
 SPEC = eval(File.read(GEMSPEC), nil, GEMSPEC)
 
 # The path to the version.rb file and a string to eval to find the version.
-VERSION_RB = "lib/#{SPEC.name.gsub('-', '/')}/version.rb"
 VERSION_REF =
   SPEC.name.split('-').map do |subname|
     subname.split('_').map(&:capitalize).join
@@ -91,7 +90,6 @@ end
 # string in _version_.
 def set_version(version)
   file_sub(GEMSPEC, /(\.version\s*=\s*).*/, "\\1'#{version}'")
-  file_sub(VERSION_RB, /^(\s*VERSION\s*=\s*).*/, "\\1'#{version}'")
 end
 
 # Returns a string that is line wrapped at word boundaries, where each line is
@@ -139,7 +137,6 @@ namespace :build do
   # Creates the README.md file from a template, the license file and the gemspec
   # contents.
   file 'README.md' => ['README.md.erb', 'LICENSE', GEMSPEC] do
-    spec = SPEC
     File.open('README.md', 'w') do |readme|
       readme.write(
         ERB.new(File.read('README.md.erb'), trim_mode: '-')
