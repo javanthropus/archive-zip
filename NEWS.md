@@ -6,6 +6,11 @@ detailed information is available in the rest of the documentation.
 **NOTE:** Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+## v0.13.0.pre1 (2025/05/25)
+
+* Upgrade io-like dependency to 0.4.0.pre1
+* Add more test coverage
+
 ## v0.12.0 (2019/02/28)
 
 ### Fixes
