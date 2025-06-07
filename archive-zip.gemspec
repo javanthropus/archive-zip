@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = 'archive-zip'
-  s.version     = '0.13.0.pre1'
+  s.version     = '0.13.0'
   s.licenses    = ['MIT']
   s.platform    = Gem::Platform::RUBY
   s.authors     = [
@@ -28,7 +28,7 @@ tools.
 
   s.required_ruby_version = '>= 2.7.0'
 
-  s.add_dependency('io-like', '~> 0.4.0.pre1')
+  s.add_dependency('io-like', '~> 0.4.0')
 
   s.add_development_dependency('rake', '~> 13.0')
   s.add_development_dependency('minitest', '~> 5.11')
