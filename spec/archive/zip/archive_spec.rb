@@ -19,19 +19,15 @@ describe 'Archive::Zip#archive' do
 
       Archive::Zip.open(archive_file_path, 'r') do |a|
         entry = a.first
-        entry.wont_be_nil
-        entry.zip_path.must_equal(file_name)
-        entry.file?.must_equal(true)
-        entry.file_data.read.must_equal('data')
+        _(entry).wont_be_nil
+        _(entry.zip_path).must_equal(file_name)
+        _(entry.file?).must_equal(true)
+        _(entry.file_data.read(8192)).must_equal('data')
       end
     end
   end
 
   it 'adds entries with multibyte names' do
-    unless Object.const_defined?(:Encoding)
-      skip("String encodings are not supported on current Ruby (#{RUBY_DESCRIPTION})")
-    end
-
     mb_file_name = '☂file☄'
     Dir.mktmpdir('archive_zip#archive') do |dir|
       mb_file_path = File.join(dir, mb_file_name)
@@ -44,10 +40,10 @@ describe 'Archive::Zip#archive' do
 
       Archive::Zip.open(archive_file_path, 'r') do |a|
         entry = a.first
-        entry.wont_be_nil
-        entry.zip_path.must_equal(mb_file_name.dup.force_encoding('binary'))
-        entry.file?.must_equal(true)
-        entry.file_data.read.must_equal('data')
+        _(entry).wont_be_nil
+        _(entry.zip_path).must_equal(mb_file_name.dup.force_encoding('binary'))
+        _(entry.file?).must_equal(true)
+        _(entry.file_data.read(8192)).must_equal('data')
       end
     end
   end

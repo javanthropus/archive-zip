@@ -1,12 +1,15 @@
 # encoding: UTF-8
 
+require 'io/like_helpers/io_wrapper'
+
 require 'archive/support/ioextensions'
-require 'archive/support/binary_stringio'
+require 'archive/support/stringio'
 require 'archive/zip/codec/deflate'
 require 'archive/zip/codec/null_encryption'
 require 'archive/zip/codec/store'
 require 'archive/zip/codec/traditional_encryption'
 require 'archive/zip/data_descriptor'
+require 'archive/zip/dos_time'
 require 'archive/zip/error'
 require 'archive/zip/extra_field'
 
@@ -220,6 +223,8 @@ module Archive; class Zip
       cfr = parse_central_file_record(io)
       next_record_position = io.pos
       io.seek(cfr.local_header_position)
+      IOExtensions.read_exactly(io, 4)
+      io.pos -= 4
       unless IOExtensions.read_exactly(io, 4) == LFH_SIGNATURE then
         raise Zip::EntryError, 'bad local file header signature'
       end
@@ -258,7 +263,9 @@ module Archive; class Zip
 
       # Create the entry.
       expanded_path = expand_path(cfr.zip_path)
-      io_window = IOWindow.new(io, io.pos, cfr.compressed_size)
+      io_window = IOWindow.new(
+        IO::LikeHelpers::IOWrapper.new(io), io.pos, cfr.compressed_size
+      )
       if cfr.zip_path[-1..-1] == '/' then
         # This is a directory entry.
         entry = Entry::Directory.new(expanded_path, io_window)
@@ -391,23 +398,31 @@ module Archive; class Zip
       raise Zip::EntryError, 'unexpected end of file'
     end
 
+    def self.parse_extra_fields(bytes)
+      extra_fields = []
+      idx = 0
+      while idx < bytes.size do
+        raise EntryError, 'insufficient data available' if bytes.size < idx + 4
+        header_id, data_size = bytes[idx, 4].unpack('vv')
+        idx += 4
+
+        if bytes.size < idx + data_size
+          raise EntryError, 'insufficient data available'
+        end
+        data = bytes[idx, data_size]
+        idx += data_size
+
+        extra_fields << yield(header_id, data)
+      end
+      extra_fields
+    end
+
     # Parses the extra fields for central file records and returns an array of
     # extra field objects.  _bytes_ must be a String containing all of the extra
     # field data to be parsed.
     def self.parse_central_extra_fields(bytes)
-      BinaryStringIO.open(bytes) do |io|
-        extra_fields = []
-        while ! io.eof? do
-          begin
-            header_id, data_size = IOExtensions.read_exactly(io, 4).unpack('vv')
-            data = IOExtensions.read_exactly(io, data_size)
-          rescue ::EOFError
-            raise EntryError, 'insufficient data available'
-          end
-
-          extra_fields << ExtraField.parse_central(header_id, data)
-        end
-        extra_fields
+      parse_extra_fields(bytes) do |header_id, data|
+        ExtraField.parse_central(header_id, data)
       end
     end
 
@@ -415,19 +430,8 @@ module Archive; class Zip
     # extra field objects.  _bytes_ must be a String containing all of the extra
     # field data to be parsed.
     def self.parse_local_extra_fields(bytes)
-      BinaryStringIO.open(bytes) do |io|
-        extra_fields = []
-        while ! io.eof? do
-          begin
-            header_id, data_size = IOExtensions.read_exactly(io, 4).unpack('vv')
-            data = IOExtensions.read_exactly(io, data_size)
-          rescue ::EOFError
-            raise EntryError, 'insufficient data available'
-          end
-
-          extra_fields << ExtraField.parse_local(header_id, data)
-        end
-        extra_fields
+      parse_extra_fields(bytes) do |header_id, data|
+        ExtraField.parse_local(header_id, data)
       end
     end
 
@@ -604,11 +608,11 @@ module Archive; class Zip
       if encryption_codec.class == Codec::TraditionalEncryption then
         # HACK:
         # According to the ZIP specification, a trailing data descriptor should
-        # only be required when writing to non-seekable IO , but InfoZIP
-        # *always* does this when using traditional encryption even though it
-        # will also write the data descriptor in the usual place if possible.
-        # Failure to emulate InfoZIP in this behavior will prevent InfoZIP
-        # compatibility with traditionally encrypted entries.
+        # only be required when writing to non-seekable IO, but InfoZIP *always*
+        # does this when using traditional encryption even though it will also
+        # write the data descriptor in the usual place if possible.  Failure to
+        # emulate InfoZIP in this behavior will prevent InfoZIP compatibility
+        # with traditionally encrypted entries.
         need_trailing_data_descriptor = true
         # HACK:
         # The InfoZIP implementation of traditional encryption requires that the
@@ -639,7 +643,7 @@ module Archive; class Zip
           version_needed_to_extract,
           general_purpose_flags,
           compression_codec.compression_method,
-          mtime.to_dos_time.to_i,
+          DOSTime.new(mtime).to_i,
           0,
           0,
           0,
@@ -649,20 +653,24 @@ module Archive; class Zip
       )
       bytes_written += io.write(zip_path)
       bytes_written += io.write(extra_field_data)
+      # Flush buffered data here because writing to the compression pipeline
+      # next bypasses the buffer.
+      io.flush
 
       # Pipeline a compressor into an encryptor, write all the file data to the
       # compressor, and get a data descriptor from it.
-      encryption_codec.encryptor(io, password) do |e|
-        compression_codec.compressor(e) do |c|
-          dump_file_data(c)
-          c.close(false)
-          @data_descriptor = DataDescriptor.new(
-            c.data_descriptor.crc32,
-            c.data_descriptor.compressed_size + encryption_codec.header_size,
-            c.data_descriptor.uncompressed_size
-          )
-        end
-        e.close(false)
+      compression_codec.compressor(
+        encryption_codec.encryptor(
+          IO::LikeHelpers::IOWrapper.open(io, autoclose: false), password
+        )
+      ) do |c|
+        dump_file_data(c)
+        c.close
+        @data_descriptor = DataDescriptor.new(
+          c.data_descriptor.crc32,
+          c.data_descriptor.compressed_size + encryption_codec.header_size,
+          c.data_descriptor.uncompressed_size
+        )
       end
       bytes_written += @data_descriptor.compressed_size
 
@@ -735,7 +743,7 @@ module Archive; class Zip
           version_needed_to_extract,
           general_purpose_flags,
           compression_codec.compression_method,
-          mtime.to_dos_time.to_i
+          DOSTime.new(mtime).to_i
         ].pack('vvvvV')
       )
       bytes_written += @data_descriptor.dump(io)
@@ -912,18 +920,18 @@ module Archive; class Zip; module Entry
     def link_target
       return @link_target unless @link_target.nil?
 
-      raw_data.rewind
-      encryption_codec.decryptor(raw_data, password) do |decryptor|
-        compression_codec.decompressor(decryptor) do |decompressor|
-          @link_target = decompressor.read
-          # Verify that the extracted data is good.
-          begin
-            unless expected_data_descriptor.nil? then
-              expected_data_descriptor.verify(decompressor.data_descriptor)
-            end
-          rescue => e
-            raise Zip::EntryError, "`#{zip_path}': #{e.message}"
+      raw_data.seek(0)
+      compression_codec.decompressor(
+        encryption_codec.decryptor(raw_data, password)
+      ) do |decompressor|
+        @link_target = decompressor.read
+        # Verify that the extracted data is good.
+        begin
+          unless expected_data_descriptor.nil? then
+            expected_data_descriptor.verify(decompressor.data_descriptor)
           end
+        rescue => e
+          raise Zip::EntryError, "`#{zip_path}': #{e.message}"
         end
       end
       @link_target
@@ -1064,20 +1072,22 @@ module Archive; class Zip; module Entry
     def file_data
       return @file_data unless @file_data.nil? || @file_data.closed?
 
-      unless raw_data.nil? then
-        raw_data.rewind
-        @file_data = compression_codec.decompressor(
-          encryption_codec.decryptor(raw_data, password)
-        )
-      else
+      if raw_data.nil? then
         if @file_path.nil? then
-          simulated_raw_data = BinaryStringIO.new
+          simulated_raw_data = StringIO.new('', 'rb')
         else
           simulated_raw_data = ::File.new(@file_path, 'rb')
         end
         # Ensure that the IO-like object can return a data descriptor so that
         # it's possible to verify extraction later if desired.
-        @file_data = Zip::Codec::Store.new.decompressor(simulated_raw_data)
+        @file_data = Zip::Codec::Store.new.decompressor(
+          IO::LikeHelpers::IOWrapper.new(simulated_raw_data)
+        )
+      else
+        raw_data.seek(0)
+        @file_data = compression_codec.decompressor(
+          encryption_codec.decryptor(raw_data, password)
+        )
       end
       @file_data
     end
@@ -1140,8 +1150,10 @@ module Archive; class Zip; module Entry
 
       # Dump the file contents.
       ::File.open(file_path, 'wb') do |f|
-        while buffer = file_data.read(4096) do
-          f.write(buffer)
+        begin
+          loop do f.write(file_data.read(8192)) end
+        rescue EOFError
+          # Ignore
         end
       end
 
@@ -1162,7 +1174,7 @@ module Archive; class Zip; module Entry
       # Attempt to rewind the file data back to the beginning, but ignore
       # errors.
       begin
-        file_data.rewind
+        file_data.seek(0)
       rescue
         # Ignore.
       end
@@ -1174,7 +1186,11 @@ module Archive; class Zip; module Entry
 
     # Write the file data to _io_.
     def dump_file_data(io)
-      while buffer = file_data.read(4096) do io.write(buffer) end
+      begin
+        loop do io.write(file_data.read(8192)) end
+      rescue EOFError
+        # Ignore
+      end
 
       # Attempt to ensure that the file data will still be in a readable state
       # at the beginning of the data for the next user, but close it if possible
@@ -1184,7 +1200,7 @@ module Archive; class Zip; module Entry
         # reinitialize the IO object it returns, so attempt to rewind the file
         # data back to the beginning, but ignore errors.
         begin
-          file_data.rewind
+          file_data.seek(0)
         rescue
           # Ignore.
         end

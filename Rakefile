@@ -14,19 +14,17 @@ GEMSPEC = Dir['*.gemspec'].first
 SPEC = eval(File.read(GEMSPEC), nil, GEMSPEC)
 
 # The path to the version.rb file and a string to eval to find the version.
-VERSION_RB = "lib/#{SPEC.name.gsub('-', '/')}/version.rb"
 VERSION_REF =
   SPEC.name.split('-').map do |subname|
     subname.split('_').map(&:capitalize).join
   end.join('::') + "::VERSION"
 
 # A dynamically generated list of files that should match the manifest (the
-# combined contents of SPEC.files and SPEC.test_files).  The idea is for this
-# list to contain all project files except for those that have been explicitly
-# excluded.  This list will be compared with the manifest from the SPEC in order
-# to help catch the addition or removal of files to or from the project that
-# have not been accounted for either by an exclusion here or an inclusion in the
-# SPEC manifest.
+# contents of SPEC.files).  The idea is for this list to contain all project
+# files except for those that have been explicitly excluded.  This list will be
+# compared with the manifest from the SPEC in order to help catch the addition
+# or removal of files to or from the project that have not been accounted for
+# either by an exclusion here or an inclusion in the SPEC manifest.
 #
 # NOTE:
 # It is critical that the manifest is *not* automatically generated via globbing
@@ -34,26 +32,23 @@ VERSION_REF =
 # redundantly generated lists of files that probably will not protect the
 # project from the unintentional inclusion or exclusion of files in the
 # distribution.
-PKG_FILES = FileList.new(Dir.glob('**/*', File::FNM_DOTMATCH)) do |files|
-  # Exclude anything that doesn't exist as well as directories.
-  files.exclude {|file| ! File.exist?(file) || File.directory?(file)}
-  # Exclude Git administrative files.
-  files.exclude(%r{(^|[/\\])\.git(ignore|modules|keep)?([/\\]|$)})
-  # Exclude editor swap/temporary files.
-  files.exclude('**/.*.sw?')
-  # Exclude gemspec files.
-  files.exclude('*.gemspec')
-  # Exclude the README template file.
-  files.exclude('README.md.erb')
-  # Exclude resources for bundler.
-  files.exclude('Gemfile', 'Gemfile.lock')
-  files.exclude(%r{^.bundle([/\\]|$)})
-  files.exclude(%r{^vendor/bundle([/\\]|$)})
-  # Exclude generated content, except for the README file.
-  files.exclude(%r{^(pkg|doc|.yardoc)([/\\]|$)})
-  # Exclude Rubinius compiled Ruby files.
-  files.exclude('**/*.rbc')
-  files.exclude('.rbx/**/*')
+PKG_FILES = FileList.new('**/*') do |files|
+  files.exclude(
+    # Test files
+    'spec/**/*',
+    # Non-shipping source files
+    '*.gemspec', 'Gemfile', 'Gemfile.lock', 'Rakefile', 'README.md.erb',
+    # Examples and experiments
+    'examples/**/*', 'experiments/**/*',
+    # Bundler files
+    'vendor/bundle/**/*',
+    # Generated content except for README
+    'pkg/**/*', 'doc/**/*', 'coverage/**/*',
+    # Temporary files
+    'tmp/**/*'
+  )
+  # Exclude directories.
+  files.exclude {|file| File.directory?(file)}
 end
 
 # Make sure that :clean and :clobber will not whack the repository files.
@@ -95,7 +90,6 @@ end
 # string in _version_.
 def set_version(version)
   file_sub(GEMSPEC, /(\.version\s*=\s*).*/, "\\1'#{version}'")
-  file_sub(VERSION_RB, /^(\s*VERSION\s*=\s*).*/, "\\1'#{version}'")
 end
 
 # Returns a string that is line wrapped at word boundaries, where each line is
@@ -127,15 +121,14 @@ namespace :build do
     manifest_files = (SPEC.files + SPEC.test_files).sort.uniq
     pkg_files = PKG_FILES.sort.uniq
     if manifest_files != pkg_files then
-      common_files = manifest_files & pkg_files
-      manifest_files -= common_files
-      pkg_files -= common_files
-      message = ["The manifest does not match the automatic file list."]
-      unless manifest_files.empty? then
-        message << "  Extraneous files:\n    " + manifest_files.join("\n    ")
+      extraneous_files = manifest_files - pkg_files
+      missing_files = pkg_files - manifest_files
+      message = ['The manifest does not match the automatic file list.']
+      unless extraneous_files.empty? then
+        message << "  Extraneous files:\n    " + extraneous_files.join("\n    ")
       end
-      unless pkg_files.empty?
-        message << "  Missing files:\n    " + pkg_files.join("\n    ")
+      unless missing_files.empty?
+        message << "  Missing files:\n    " + missing_files.join("\n    ")
       end
       raise message.join("\n")
     end
@@ -144,10 +137,10 @@ namespace :build do
   # Creates the README.md file from a template, the license file and the gemspec
   # contents.
   file 'README.md' => ['README.md.erb', 'LICENSE', GEMSPEC] do
-    spec = SPEC
     File.open('README.md', 'w') do |readme|
       readme.write(
-        ERB.new(File.read('README.md.erb'), nil, '-').result(binding)
+        ERB.new(File.read('README.md.erb'), trim_mode: '-')
+        .result_with_hash(spec: SPEC)
       )
     end
   end
@@ -174,6 +167,7 @@ end
 
 Rake::TestTask.new do |t|
   t.pattern = 'spec/**/*_spec.rb'
+  t.ruby_opts = %w{-r ./spec/coverage}
 end
 
 # Version string management tasks.
@@ -189,7 +183,7 @@ namespace :version do
   end
 
   desc 'Check that all version strings are correctly set'
-  task :check => ['version:check:spec', 'version:check:version_rb', 'version:check:news']
+  task :check => ['version:check:spec', 'version:check:news']
 
   namespace :check do
     desc 'Check that the version in the gemspec is correctly set'
@@ -197,20 +191,6 @@ namespace :version do
       version = get_version_argument
       if version != SPEC.version
         raise "The given version `#{version}' does not match the gemspec version `#{SPEC.version}'"
-      end
-    end
-
-    desc 'Check that the version in the version.rb file is correctly set'
-    task :version_rb do
-      version = get_version_argument
-      begin
-        load VERSION_RB
-        internal_version = Gem::Version.create(eval(VERSION_REF))
-        if version != internal_version
-          raise "The given version `#{version}' does not match the version.rb version `#{internal_version}'"
-        end
-      rescue ArgumentError
-        raise "Invalid version specified in `#{VERSION_RB}'"
       end
     end
 

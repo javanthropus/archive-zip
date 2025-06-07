@@ -6,7 +6,6 @@ require 'tempfile'
 
 require 'archive/support/ioextensions'
 require 'archive/support/iowindow'
-require 'archive/support/time'
 require 'archive/support/zlib'
 require 'archive/zip/codec'
 require 'archive/zip/entry'
@@ -112,7 +111,7 @@ module Archive # :nodoc:
       begin
         yield(zf)
       ensure
-        zf.close unless zf.closed?
+        zf.close
       end
     end
 
@@ -164,10 +163,8 @@ module Archive # :nodoc:
     #
     # <b>NOTE:</b> The underlying stream is only closed if the archive was
     # opened with a String for the _archive_ parameter.
-    #
-    # Raises Archive::Zip::IOError if called more than once.
     def close
-      raise IOError, 'closed archive' if closed?
+      return nil if closed?
 
       if writable? then
         # Write the new archive contents.
