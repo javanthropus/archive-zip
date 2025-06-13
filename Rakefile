@@ -32,23 +32,52 @@ VERSION_REF =
 # redundantly generated lists of files that probably will not protect the
 # project from the unintentional inclusion or exclusion of files in the
 # distribution.
+IGNORE_RULE = %r{\A(?<include>!?)(?<path>(\\.| *[^# \n])*) *(#.*)?\n*\z}
 PKG_FILES = FileList.new('**/*') do |files|
-  files.exclude(
-    # Test files
-    'spec/**/*',
-    # Non-shipping source files
-    '*.gemspec', 'Gemfile', 'Gemfile.lock', 'Rakefile', 'README.md.erb',
-    # Examples and experiments
-    'examples/**/*', 'experiments/**/*',
-    # Bundler files
-    'vendor/bundle/**/*',
-    # Generated content except for README
-    'pkg/**/*', 'doc/**/*', 'coverage/**/*',
-    # Temporary files
-    'tmp/**/*'
-  )
   # Exclude directories.
-  files.exclude {|file| File.directory?(file)}
+  files.exclude { |file| File.directory?(file) }
+
+  # Parse the ignore rules.
+  rules = File.open('.ruby-gems.ignore') do |f|
+    f.filter_map do |line|
+      rule = IGNORE_RULE.match(line).named_captures
+
+      # If the include operator wasn't specified in the rule, then the operation
+      # is to exclude.
+      exclude = rule['include'].empty?
+      path = rule['path']
+      next if path.empty?
+
+      # Replace all escapes in the path.
+      path.gsub!(%r{\\(.)}, "\\1")
+
+      # If there is no / at the beginning or middle of the path, then the path
+      # matches at any level, so prepend the glob for that.
+      path.insert(0, '{**/,}') if path =~ %r{\A[^/]+/?\z}
+
+      # A trailing slash means to match everything under the path, so append the
+      # glob for that.
+      path += '**/*' if path.end_with?('/')
+
+      # A leading / is redundant since it means to root matches at the same
+      # level as the ignore file.
+      path.sub!(%r{^/+}, '')
+
+      {exclude: exclude, path: path}
+    end
+  end
+
+  # Add an exclude rule based on the set of ignore rules.
+  # A given file is presumed to be included at first.  The last ignore rule
+  # whose path matches the file dictates whether or not the file is excluded by
+  # way of the rules exclude setting.
+  fnmatch_flags = File::FNM_PATHNAME | File::FNM_DOTMATCH | File::FNM_EXTGLOB
+  files.exclude do |file|
+    rule = rules.reverse_each
+      .find { |rule| File.fnmatch(rule[:path], file, fnmatch_flags) }
+    next false if rule.nil?
+    rule[:exclude]
+  end
 end
 
 # Make sure that :clean and :clobber will not whack the repository files.
