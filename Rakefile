@@ -13,12 +13,6 @@ require 'yard'
 GEMSPEC = Dir['*.gemspec'].first
 SPEC = eval(File.read(GEMSPEC), nil, GEMSPEC)
 
-# The path to the version.rb file and a string to eval to find the version.
-VERSION_REF =
-  SPEC.name.split('-').map do |subname|
-    subname.split('_').map(&:capitalize).join
-  end.join('::') + "::VERSION"
-
 # A dynamically generated list of files that should match the manifest (the
 # contents of SPEC.files).  The idea is for this list to contain all project
 # files except for those that have been explicitly excluded.  This list will be
