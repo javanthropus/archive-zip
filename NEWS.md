@@ -6,6 +6,10 @@ detailed information is available in the rest of the documentation.
 **NOTE:** Date stamps in the following entries are in YYYY/MM/DD format.
 
 
+## v0.13.1 (2025/06/20)
+
+* Fix an exception when extracting symlinks
+
 ## v0.13.0 (2025/06/07)
 
 * Upgrade io-like dependency to 0.4.0

@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = 'archive-zip'
-  s.version     = '0.13.0'
+  s.version     = '0.13.1'
   s.licenses    = ['MIT']
   s.platform    = Gem::Platform::RUBY
   s.authors     = [
