@@ -924,7 +924,12 @@ module Archive; class Zip; module Entry
       compression_codec.decompressor(
         encryption_codec.decryptor(raw_data, password)
       ) do |decompressor|
-        @link_target = decompressor.read
+        @link_target = ''.b
+        begin
+          loop do @link_target << decompressor.read(8192) end
+        rescue EOFError
+          # Ignore.
+        end
         # Verify that the extracted data is good.
         begin
           unless expected_data_descriptor.nil? then
